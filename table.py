@@ -136,7 +136,7 @@ class Table(object):
         pass
 
     def update_winners(self, data):
-        pass
+        logging.debug("need to implement")
 
     def end(self):
         player = self.find_player_by_md5(settings.bot_md5)
