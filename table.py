@@ -135,8 +135,9 @@ class Table(object):
     def update_action(self, action):
         pass
 
-    def update_winners(self, data):
-        logging.debug("need to implement")
+    def update_winners(self, winners):
+        for winner in winners:
+            logging.debug("The winner is (%s)-(%s), chips:(%s)", winner.playerName, winner.hand.message, winner.chips)
 
     def end(self):
         player = self.find_player_by_md5(settings.bot_md5)
