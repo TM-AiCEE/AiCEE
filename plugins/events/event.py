@@ -28,7 +28,7 @@ def new_peer_2(message):
     if t:
         t.number = d.tableNumber
         t.status = d.tableStatus
-        logger.info("current table number is %s", t.number)
+        logger.info("the table number is updated to %s", t.number)
 
     for pjson in d.players:
         player = t.find_player_by_md5(pjson.playerName)
@@ -63,6 +63,7 @@ def deal(message):
 def handle_action_requests(message):
     d = message.data
     t = table_mgr.current()
+
     if t and t.number == int(d.tableNumber):
         t.update_table(d.game)
         t.update_players(d.game.players)
@@ -112,8 +113,11 @@ def game_over(message):
     d = message.data
     t = table_mgr.current()
 
-    if hasattr(d, 'msg'):
-        logging.info('Table Number: %s, Status: %s', d.tableNumber, d.msg)
+    if t:
+        t.update_players(d.players)
+        t.update_table(d.table)
+        t.update_winner(d.winners)
         t.end()
+
 
 

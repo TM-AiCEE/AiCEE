@@ -94,7 +94,7 @@ class Bot(Player):
         if is_bet_event:
             self._take_action(table, "__bet", Player.Actions.BET, amount)
         else:
-            if hand_rank > 0.9:
+            if hand_rank > 0.99:
                 self._take_action(table, "__action", Player.Actions.ALLIN)
             elif hand_rank > 0.7:
                 self._take_action(table, "__action", Player.Actions.RAISE)

@@ -3,6 +3,7 @@ import json
 
 from singleton import SingletonMetaclass
 from player import Player
+import settings
 
 
 class Table(object):
@@ -138,7 +139,9 @@ class Table(object):
         pass
 
     def end(self):
-        pass
+        player = self.find_player_by_md5(settings.bot_md5)
+        if player:
+            player.join()
 
 
 class TableManager(metaclass=SingletonMetaclass):

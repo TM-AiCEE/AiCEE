@@ -29,9 +29,6 @@ def receive_from(name, flags=0):
 
 if __name__ == '__main__':
 
-    bot_name = "AiCEEBot1"
-    bot_md5 = "c44e9c3435efb86fd7e34974aaeaaa98"
-
     if len(sys.argv) > 2:
         bot_name = str(sys.argv[1])
 
@@ -39,7 +36,7 @@ if __name__ == '__main__':
     client.start()
 
     try:
-        bot = Bot(client=client, name=bot_name, md5=bot_md5)
+        bot = Bot(client=client, name=settings.bot_name, md5=settings.bot_md5)
         bot.join()
 
         table_mgr = TableManager()
