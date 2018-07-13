@@ -98,6 +98,9 @@ class Table(object):
         if hasattr(data, "totalBet"):
             self.total_bet = data.totalBet
 
+    def end_round(self):
+        self.board.clear()
+
     def update_action(self, action):
         pass
 

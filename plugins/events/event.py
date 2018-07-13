@@ -106,6 +106,7 @@ def end_round(message):
     if t:
         t.update_table(d.table)
         t.update_players(d.players)
+        t.end_round()
 
 
 @receive_from("__game_over")
