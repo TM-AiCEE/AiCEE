@@ -38,12 +38,11 @@ class HandEvaluator(object):
 
         return sample_board
 
-
     def calculate_win_prob(self, hands, boards):
         board_cards = boards
 
         logging.debug("board_cards is:")
-        Card.print_pretty_cards(boards)
+        Card.print_pretty_cards(board_cards)
 
         evaluator = Evaluator()
         to_draw_number = 5 - len(board_cards)
@@ -63,6 +62,10 @@ class HandEvaluator(object):
 
     def evaluate_hand(self, cards, boards, num_player):
         hands, board_cards = self._converter_to_card(cards, boards)
+        logging.debug("hands is:")
+        Card.print_pretty_cards(hands)
+        logging.debug("board cards is:")
+        Card.print_pretty_cards(board_cards)
         win_prob = self.calculate_win_prob(hands, board_cards)
         return win_prob
 

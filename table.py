@@ -98,40 +98,6 @@ class Table(object):
         if hasattr(data, "totalBet"):
             self.total_bet = data.totalBet
 
-    def update_info(self, table_data):
-        if self.number == int(table_data.data.table.tableNumber):
-            self.round_name = table_data.data.table.roundName
-            self.board = table_data.data.table.board
-            self.round_count = table_data.data.table.roundCount
-            self.raise_count = table_data.data.table.raiseCount
-            self.bet_count = table_data.data.table.betCount
-            self.small_blind = table_data.data.table.smallBlind
-            self.big_blind = table_data.data.table.bigBlind
-            logging.debug(vars(self))
-
-            for player in table_data.data.players:
-                new_player = self.find_player_by_md5(player.playerName)
-
-                cards = None
-                if hasattr(player, 'cards'):
-                    cards = player.cards
-
-                info = Player.PlayerInfo(player.playerName,
-                                         player.chips,
-                                         player.folded,
-                                         player.allIn,
-                                         player.isSurvive,
-                                         player.reloadCount,
-                                         player.roundBet,
-                                         player.bet,
-                                         cards)
-                if new_player is not None:
-                    new_player.update(info)
-                else:
-                    new_player = Player(info)
-                    self.add_player(new_player)
-                logging.debug(vars(new_player))
-
     def update_action(self, action):
         pass
 
