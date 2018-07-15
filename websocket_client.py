@@ -29,6 +29,12 @@ class WebSocketClient(object):
         else:
             logging.info("connect failed: %s", self.ws.status)
 
+    def _reconnect(self):
+        if self.is_connect:
+            time.sleep(30)
+            self._disconnect()
+            self.start()
+
     def _disconnect(self):
         try:
             if self.ws:
@@ -82,5 +88,5 @@ class TexasPokerClient(WebSocketClient):
 
     def on_error(self, e):
         logging.info("on_error")
-        time.sleep(20)
+        self._reconnect()
 

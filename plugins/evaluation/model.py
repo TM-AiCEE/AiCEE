@@ -1,4 +1,5 @@
 import logging
+import json
 
 from plugins.treys import Card
 from plugins.treys import Evaluator
@@ -8,22 +9,19 @@ from plugins.treys import Deck
 class HandEvaluator(object):
 
     def __init__(self):
-        self.simulation_number = 5000
-        self.win = 0
+        self._simulation_number = 20000
+        self._win_rate = 0
+        self._lookup = json.load(open("data/preflop_odds.json"))
 
     @staticmethod
-    def _converter_to_card(scards, sboards):
-        hands, board_cards = [], []
+    def _converter_to_card(cards_from_s):
+        cards = []
 
-        for card in scards:
+        for card in cards_from_s:
             c = card.lower().capitalize()
-            hands.append(Card.new(c))
+            cards.append(Card.new(c))
 
-        for card in sboards:
-            c = card.lower().capitalize()
-            board_cards.append(Card.new(c))
-
-        return hands, board_cards
+        return cards
 
     @staticmethod
     def _calculate_cards_to_draw(boards, cards_to_draw):
@@ -38,11 +36,11 @@ class HandEvaluator(object):
 
         return sample_board
 
-    def calculate_win_prob(self, hands, boards):
+    def _calculate_win_prob(self, hands, boards):
         board_cards = boards
 
         # PRE-FLOP, FLOP, TURN, RIVER, HAND OVER
-        n = 10000
+        n = self._simulation_number
         total_win_prob = 0
         evaluator = Evaluator()
 
@@ -66,8 +64,27 @@ class HandEvaluator(object):
         logging.info("simulation win_prob: %s", win_prob)
         return win_prob
 
-    def evaluate_hand(self, cards, boards, num_player):
-        hands, board_cards = self._converter_to_card(cards, boards)
-        win_prob = self.calculate_win_prob(hands, board_cards)
+    def evaluate_postflop_win_prob(self, cards, boards, num_player):
+        hands = self._converter_to_card(cards)
+        board_cards = self._converter_to_card(boards)
+        win_prob = self._calculate_win_prob(hands, board_cards)
         return win_prob
+
+    def evaluate_preflop_win_prob(self, cards):
+        cards = self._converter_to_card(cards)
+        Card.print_pretty_cards(cards)
+
+        key = ''.join([Card.int_to_str(card)[0] for card in cards])
+
+        if Card.get_suit_int(cards[0]) == Card.get_suit_int(cards[1]):
+            key = key + "s"
+        else:
+            key = key + "o"
+
+        if key in self._lookup.key():
+            odds = float(self._lookup[key]["win_odds"])
+        else:
+            odds = float(self._lookup[key[:-1]]["win_odds"])
+        return odds / 100
+
 

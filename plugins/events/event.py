@@ -45,15 +45,18 @@ def new_peer_2(message):
 def start_of_new_round(message):
     d = message.data
     t = table_mgr.current()
+
     if t:
         t.update_table(d.table)
         t.update_players(d.players)
+        t.end_round()
 
 
 @receive_from("__deal")
 def deal(message):
     d = message.data
     t = table_mgr.current()
+
     if t:
         t.update_table(d.table)
         t.update_players(d.players)
@@ -93,6 +96,9 @@ def request_bet(message):
 def update_board_info(message):
     d = message.data
     t = table_mgr.current()
+
+    logging.info("round name: %s", t.round_name)
+
     if t:
         t.update_table(d.table)
         t.update_players(d.players)

@@ -8,6 +8,8 @@ import settings
 
 class Table(object):
 
+    stages = ["Deal", "Flop", "Turn", "River"]
+
     def __init__(self, client=None, number=5274, status=0):
         self.client = client
         self.number = number

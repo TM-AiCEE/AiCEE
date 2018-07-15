@@ -29,19 +29,18 @@ def receive_from(name, flags=0):
 
 if __name__ == '__main__':
 
-    bot_name, bot_md5 = "", ""
-    if len(sys.argv) >= 3:
+    bot_name = ""
+    if len(sys.argv) >= 2:
         bot_name = str(sys.argv[1])
-        bot_md5 = str(sys.argv[2])
+
     else:
         bot_name = settings.bot_name
-        bot_md5 = settings.bot_md5
 
     client = TexasPokerClient(settings.TRAINING_SERVER_URL)
     client.start()
 
     try:
-        bot = Bot(client=client, name=bot_name, md5=bot_md5)
+        bot = Bot(client=client, name=bot_name)
         bot.join()
 
         table_mgr = TableManager()

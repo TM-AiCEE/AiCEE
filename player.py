@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 import json
 import logging
+import hashlib
 
 from enum import Enum
 from plugins.evaluation.model import HandEvaluator
@@ -9,7 +10,17 @@ from plugins.evaluation.chipevaluator import ChipEvaluator
 logger = logging.getLogger(__name__)
 
 
-class Player:
+class Player(object):
+
+    ACTIONS_CLASS_TO_STRING = {
+        0: "BET",
+        1: "CALL",
+        2: "RAISE",
+        3: "CHECK",
+        4: "FOLD",
+        5: "ALLIN"
+    }
+
     class Actions(Enum):
         BET = 0
         CALL = 1
@@ -57,11 +68,12 @@ class Player:
 
 
 class Bot(Player):
-    def __init__(self, client, name, md5, number = 0):
+    def __init__(self, client, name, number=0):
         self.client = client
         self.minibet = None
         self.number = number
         self.name = name
+        md5 = hashlib.md5(name.encode('utf-8')).hexdigest()
         super(Bot, self).__init__(md5)
 
     def update_self(self, info):
@@ -88,24 +100,36 @@ class Bot(Player):
         }))
 
     def do_actions(self, table, is_bet_event=False):
-        hand_rank = HandEvaluator().evaluate_hand(self.cards, table.board, len(table.players))
-        amount = ChipEvaluator(table).evaluate(hand_rank, is_bet_event)
+
+        # pre-flop strength
+        if table.stages.index(table.round_name) == 0:
+            win_prob = HandEvaluator().evaluate_preflop_win_prob(self.cards)
+
+        # flop, flop, turn, river strength (MonteCarlo)
+        else:
+            win_prob = HandEvaluator().evaluate_postflop_win_prob(self.cards, table.board, len(table.players))
+
+        # chip evaluator based on win_prob
+        chip = ChipEvaluator(table).evaluate(win_prob, is_bet_event)
 
         if is_bet_event:
-            self._take_action(table, "__bet", Player.Actions.BET, amount)
+            self._take_action(table, "__bet", Player.Actions.BET, chip)
         else:
-            if hand_rank > 0.99:
+            if win_prob >= 0.99:
                 self._take_action(table, "__action", Player.Actions.ALLIN)
-            elif hand_rank > 0.7:
+            elif win_prob >= 0.85:
                 self._take_action(table, "__action", Player.Actions.RAISE)
-            elif hand_rank > 0.5:
+            elif win_prob >= 0.6:
                 self._take_action(table, "__action", Player.Actions.CALL)
-            elif hand_rank > 0.4:
+            elif win_prob >= 0.2:
                 self._take_action(table, "__action", Player.Actions.CHECK)
             else:
                 self._take_action(table, "__action", Player.Actions.FOLD)
 
     def _take_action(self, table, event_name, action, amount=0):
+
+        logging.info("The Actions is (%s).", super(Bot, self).ACTIONS_CLASS_TO_STRING[action.value])
+
         # If the action is 'bet', the message must include an 'amount'
         if event_name == "__bet":
             self.client.send(json.dumps({
@@ -152,3 +176,4 @@ class Bot(Player):
                         "action": "check",
                     }
                 }))
+
