@@ -36,8 +36,12 @@ if __name__ == '__main__':
     else:
         bot_name = settings.bot_name
 
-    client = TexasPokerClient(settings.TRAINING_SERVER_URL)
-    client.start()
+    if settings.TRAINING_MODE:
+        client = TexasPokerClient(settings.TRAINING_SERVER_URL)
+        client.start()
+    else:
+        client = TexasPokerClient(settings.BATTLE_SERVER_URL)
+        client.start()
 
     try:
         bot = Bot(client=client, name=bot_name)

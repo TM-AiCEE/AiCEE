@@ -11,7 +11,7 @@ class HandEvaluator(object):
     def __init__(self):
         self._simulation_number = 20000
         self._win_rate = 0
-        self._lookup = json.load(open("data/preflop_odds.json"))
+        # self._lookup = json.load(open("data/preflop_odds.json"))
 
     @staticmethod
     def _converter_to_card(cards_from_s):

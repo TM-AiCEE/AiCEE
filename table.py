@@ -2,7 +2,7 @@ import logging
 import json
 
 from singleton import SingletonMetaclass
-from player import Player
+from player import Player, Bot
 import settings
 
 
@@ -34,7 +34,7 @@ class Table(object):
 
     def find_player_by_name(self, name):
         for player in self.players:
-            if player.real_name == name:
+            if player.name == name:
                 return player
         return None
 
@@ -101,6 +101,13 @@ class Table(object):
             self.total_bet = data.totalBet
 
     def end_round(self):
+        # show all player chips
+        for player in self.players:
+            if type(player) is Bot:
+                logging.info("bot name: %s, chips: %d", player.md5, player.chips)
+            else:
+                logging.info("player name: %s, chips: %d", player.md5, player.chips)
+
         self.board.clear()
 
     def update_action(self, action):
@@ -111,7 +118,7 @@ class Table(object):
             logging.debug("The winner is (%s)-(%s), chips:(%s)", winner.playerName, winner.hand.message, winner.chips)
 
     def end(self):
-        player = self.find_player_by_md5(settings.bot_md5)
+        player = self.find_player_by_name(settings.bot_name)
         if player:
             player.join()
 
