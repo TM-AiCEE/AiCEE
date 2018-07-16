@@ -4,19 +4,19 @@ class ChipEvaluator(object):
         self.table = table
 
     @staticmethod
-    def evaluate(hand_rank, is_bet_event=False):
-        if is_bet_event and hand_rank > 0.5:
-            return 100
-        if is_bet_event and hand_rank > 0.3:
-            return 20
-        if is_bet_event and hand_rank < 0.3:
-            return 10
+    def evaluate(win_rate, is_bet_event=False, smallblind=10, bigblind=20):
+        if is_bet_event and win_rate > 0.9:
+            return bigblind
+        if is_bet_event and win_rate > 0.5:
+            return smallblind
+        if is_bet_event and win_rate < 0.3:
+            return smallblind
         else:
-            if hand_rank > 0.3:
-                return 20
-            elif hand_rank > 0.5:
-                return 30
+            if win_rate > 0.9:
+                return bigblind
+            elif win_rate > 0.3:
+                return smallblind
             else:
-                return 10
-        return 10
+                return smallblind
+        return smallblind
 
