@@ -4,7 +4,7 @@ class ChipEvaluator(object):
         self.table = table
 
     @staticmethod
-    def evaluate(self, hand_rank, is_bet_event=False):
+    def evaluate(hand_rank, is_bet_event=False):
         if is_bet_event and hand_rank > 0.5:
             return 100
         if is_bet_event and hand_rank > 0.3:
