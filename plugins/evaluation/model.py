@@ -9,7 +9,7 @@ from plugins.treys import Deck
 class HandEvaluator(object):
 
     def __init__(self):
-        self._simulation_number = 20000
+        self._simulation_number = 10000
         self._win_rate = 0
         # self._lookup = json.load(open("data/preflop_odds.json"))
 
@@ -44,6 +44,8 @@ class HandEvaluator(object):
         total_win_prob = 0
         evaluator = Evaluator()
 
+        Card.print_pretty_cards(hands + boards)
+
         if len(boards) >= 3:
             logging.debug("hands+boards:")
             Card.print_pretty_cards(hands+boards)
@@ -59,8 +61,8 @@ class HandEvaluator(object):
             rank = evaluator.evaluate(board_cards, hands)
             win_prob = 1.0 - evaluator.get_five_card_rank_percentage(rank)
             total_win_prob += win_prob
-        win_prob = total_win_prob / n
 
+        win_prob = total_win_prob / n
         logging.info("simulation win_prob: %s", win_prob)
         return win_prob
 

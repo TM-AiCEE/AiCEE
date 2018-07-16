@@ -6,6 +6,7 @@ import hashlib
 from enum import Enum
 from plugins.evaluation.model import HandEvaluator
 from plugins.evaluation.chipevaluator import ChipEvaluator
+from plugins.evaluation.stragegy import StrategyEvaluator
 
 logger = logging.getLogger(__name__)
 
@@ -112,16 +113,19 @@ class Bot(Player):
         # chip evaluator based on win_prob
         chip = ChipEvaluator(table).evaluate(win_prob, is_bet_event)
 
+        # rule-based strategy
+        threshold = StrategyEvaluator().evaluate(table, win_prob, chip)
+
         if is_bet_event:
             self._take_action(table, "__bet", Player.Actions.BET, chip)
         else:
-            if win_prob >= 0.99:
+            if win_prob >= threshold[0]:
                 self._take_action(table, "__action", Player.Actions.ALLIN)
-            elif win_prob >= 0.85:
+            elif win_prob >= threshold[1]:
                 self._take_action(table, "__action", Player.Actions.RAISE)
-            elif win_prob >= 0.6:
+            elif win_prob >= threshold[2]:
                 self._take_action(table, "__action", Player.Actions.CALL)
-            elif win_prob >= 0.2:
+            elif win_prob >= threshold[3]:
                 self._take_action(table, "__action", Player.Actions.CHECK)
             else:
                 self._take_action(table, "__action", Player.Actions.FOLD)

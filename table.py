@@ -108,10 +108,12 @@ class Table(object):
             else:
                 logging.info("player name: %s, chips: %d", player.md5, player.chips)
 
-        self.board.clear()
-
     def update_action(self, action):
-        pass
+        someone_all_in = False
+        for player in self.players:
+            if player.allin:
+                logging.info("player name: %s, chips: %s, all in: %s", player.md5, player.chips, player.allin)
+                someone_all_in = True
 
     def update_winners(self, winners):
         for winner in winners:
