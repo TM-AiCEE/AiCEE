@@ -9,9 +9,9 @@ from plugins.treys import Deck
 class HandEvaluator(object):
 
     def __init__(self):
-        self._simulation_number = 10000
+        self._simulation_number = 3000
         self._win_rate = 0
-        # self._lookup = json.load(open("data/preflop_odds.json"))
+        self._lookup = json.load(open("data/preflop_odds.json"))
 
     @staticmethod
     def _converter_to_card(cards_from_s):
@@ -72,21 +72,28 @@ class HandEvaluator(object):
         win_prob = self._calculate_win_prob(hands, board_cards)
         return win_prob
 
-    def evaluate_preflop_win_prob(self, cards):
+    def evaluate_preflop_win_prob(self, cards, num_player):
         cards = self._converter_to_card(cards)
+        cards = sorted(cards, reverse=True)
         Card.print_pretty_cards(cards)
 
         key = ''.join([Card.int_to_str(card)[0] for card in cards])
 
-        if Card.get_suit_int(cards[0]) == Card.get_suit_int(cards[1]):
-            key = key + "s"
-        else:
-            key = key + "o"
+        rank1 = Card.get_rank_int(cards[0])
+        rank2 = Card.get_rank_int(cards[1])
 
-        if key in self._lookup.key():
-            odds = float(self._lookup[key]["win_odds"])
-        else:
-            odds = float(self._lookup[key[:-1]]["win_odds"])
-        return odds / 100
+        if Card.get_rank_int(cards[0]) != Card.get_rank_int(cards[1]):
+            if Card.get_suit_int(cards[0]) == Card.get_suit_int(cards[1]):
+                key = key + "s"
+            else:
+                key = key + "o"
+
+        for item_key, item_value in self._lookup.items():
+            if item_key == key:
+                logging.info("%s, %s, %s", item_key, str(num_player-1), self._lookup[key][0].get(str(num_player-1)))
+                odds = float(self._lookup[key][0].get(str(num_player-1)))
+                if Card.get_rank_int(cards[0]) == Card.get_rank_int(cards[1]):
+                    odds *= 2.0
+        return odds
 
 

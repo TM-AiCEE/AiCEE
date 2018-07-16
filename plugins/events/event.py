@@ -38,7 +38,7 @@ def new_peer_2(message):
         else:
             player = Player(pjson.playerName)
             player.is_online = pjson.isOnline
-            t.add_player(player)
+            # t.add_player(player)
 
 
 @receive_from("__new_round")

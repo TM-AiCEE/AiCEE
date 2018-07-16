@@ -41,7 +41,7 @@ class Table(object):
     def add_player_by_md5(self, md5_name):
         player = Player(md5=md5_name)
         self.players.append(player)
-        logging.info("player (MD5(%s)) joined.", player.md5)
+        # logging.info("player (MD5(%s)) joined.", player.md5)
         return player
 
     def add_player(self, player):
@@ -125,6 +125,11 @@ class Table(object):
         player = self.find_player_by_name(settings.bot_name)
         if player:
             player.join()
+        self.players.clear()
+
+    def get_survive_player_num(self):
+        survive_num = len(self.players)
+        return survive_num
 
 
 class TableManager(metaclass=SingletonMetaclass):

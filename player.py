@@ -103,12 +103,12 @@ class Bot(Player):
     def do_actions(self, table, is_bet_event=False):
 
         # pre-flop strength
-        # if table.stages.index(table.round_name) == 0 and False:
-        #    win_prob = HandEvaluator().evaluate_preflop_win_prob(self.cards)
+        if table.stages.index(table.round_name) == 0:
+            win_prob = HandEvaluator().evaluate_preflop_win_prob(self.cards, table.get_survive_player_num())
 
         # flop, flop, turn, river strength (MonteCarlo)
-        # else:
-        win_prob = HandEvaluator().evaluate_postflop_win_prob(self.cards, table.board, len(table.players))
+        else:
+            win_prob = HandEvaluator().evaluate_postflop_win_prob(self.cards, table.board, len(table.players))
 
         # chip evaluator based on win_prob
         chip = ChipEvaluator(table).evaluate(win_prob, is_bet_event)
