@@ -6,7 +6,7 @@ import hashlib
 from enum import Enum
 from plugins.evaluation.model import HandEvaluator
 from plugins.evaluation.chipevaluator import ChipEvaluator
-from plugins.evaluation.stragegy import StrategyEvaluator
+from plugins.evaluation.strategy import StrategyEvaluator
 
 logger = logging.getLogger(__name__)
 

@@ -34,7 +34,7 @@ def new_peer_2(message):
         player = t.find_player_by_md5(pjson.playerName)
         if player:
             player.is_online = pjson.isOnline
-            logging.info("player (MD5(%s)), online status is: (%s).", player.md5, player.is_online)
+            # logging.info("player (MD5(%s)), online status is: (%s).", player.md5, player.is_online)
         else:
             player = Player(pjson.playerName)
             player.is_online = pjson.isOnline

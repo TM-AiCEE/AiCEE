@@ -114,6 +114,8 @@ class Table(object):
             if player.allin:
                 logging.info("player name: %s, chips: %s, all in: %s", player.md5, player.chips, player.allin)
                 someone_all_in = True
+        logging.info("player name: %s, action: %s, chips: %s",
+                     action.playerName, action.action, action.chips)
 
     def update_winners(self, winners):
         for winner in winners:
