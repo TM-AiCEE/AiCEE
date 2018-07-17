@@ -25,6 +25,7 @@ class Table(object):
         self.total_bet = None
         self.init_chips = 0
         self.max_reload_count = 0
+        self._survive_player_num = 0
 
     def find_player_by_md5(self, md5):
         for player in self.players:
@@ -104,9 +105,14 @@ class Table(object):
         # show all player chips
         for player in self.players:
             if type(player) is Bot:
-                logging.info("bot name: %s, chips: %d", player.md5, player.chips)
+                logging.info("bot name: %s, chips: %d, is_survive: %s", player.md5, player.chips, player.is_survive)
             else:
-                logging.info("player name: %s, chips: %d", player.md5, player.chips)
+                logging.info("player name: %s, chips: %d, is_survive: %s", player.md5, player.chips, player.is_survive)
+
+        self._survive_player_num = len(self.players) + 1
+        for player in self.players:
+            if not player.is_survive:
+                self._survive_player_num -= 1
 
     def update_action(self, action):
         someone_all_in = False
@@ -126,10 +132,10 @@ class Table(object):
         if player:
             player.join()
         self.players.clear()
+        self._survive_player_num = 0
 
     def get_survive_player_num(self):
-        survive_num = len(self.players)
-        return survive_num
+        return self._survive_player_num
 
 
 class TableManager(metaclass=SingletonMetaclass):

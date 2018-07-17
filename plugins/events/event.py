@@ -17,7 +17,7 @@ def new_peer(message):
         if t:
             player = t.find_player_by_md5(md5)
             if player is None:
-                t.add_player_by_md5(md5)
+                t.add_player_by_md5(md5.playerName)
 
 
 @receive_from("__new_peer_2")
