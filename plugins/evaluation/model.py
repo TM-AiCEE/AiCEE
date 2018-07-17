@@ -9,7 +9,7 @@ from plugins.treys import Deck
 class HandEvaluator(object):
 
     def __init__(self):
-        self._simulation_number = 3000
+        self._simulation_number = 10000
         self._win_rate = 0
         self._lookup = json.load(open("data/preflop_odds.json"))
 
@@ -91,7 +91,10 @@ class HandEvaluator(object):
         for item_key, item_value in self._lookup.items():
             if item_key == key:
                 logging.info("%s, %s, %s", item_key, str(num_player-1), self._lookup[key][0].get(str(num_player-1)))
-                odds = float(self._lookup[key][0].get(str(num_player-1)))
+                if num_player - 1 < 0:
+                    odds = float(self._lookup[key][0].get(str(1)))
+                else:
+                    odds = float(self._lookup[key][0].get(str(num_player-1)))
                 if Card.get_rank_int(cards[0]) == Card.get_rank_int(cards[1]):
                     odds *= 2.0
         return odds

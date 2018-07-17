@@ -1,10 +1,10 @@
 import logging
 import json
+import settings
 
 from singleton import SingletonMetaclass
 from player import Player, Bot
-import settings
-
+from operator import attrgetter
 
 class Table(object):
 
@@ -27,6 +27,20 @@ class Table(object):
         self.max_reload_count = 0
         self._survive_player_num = 0
 
+    def _reset(self):
+        self.round_name = ""
+        self.board.clear()
+        self.round_count = 0
+        self.raise_count = 0
+        self.bet_count = 0
+        self.small_blind = None
+        self.big_blind = None
+        self.players.clear()
+        self.total_bet = None
+        self.init_chips = 0
+        self.max_reload_count = 0
+        self._survive_player_num = 0
+
     def find_player_by_md5(self, md5):
         for player in self.players:
             if player.md5 == md5:
@@ -35,15 +49,15 @@ class Table(object):
 
     def find_player_by_name(self, name):
         for player in self.players:
-            if player.name == name:
+            if player.md5 == name:
                 return player
         return None
 
     def add_player_by_md5(self, md5_name):
-        player = Player(md5=md5_name)
-        self.players.append(player)
-        # logging.info("player (MD5(%s)) joined.", player.md5)
-        return player
+        player = self.find_player_by_md5(md5_name)
+        if player is None:
+            player = Player(md5=md5_name)
+            self.players.append(player)
 
     def add_player(self, player):
         self.players.append(player)
@@ -105,14 +119,23 @@ class Table(object):
         # show all player chips
         for player in self.players:
             if type(player) is Bot:
-                logging.info("bot name: %s, chips: %d, is_survive: %s", player.md5, player.chips, player.is_survive)
+                logging.info("[AiCEE] player name: %s, chips: %d, is_survive: %s, is_human=%s.", player.md5, player.chips, player.is_survive, player.is_human)
             else:
-                logging.info("player name: %s, chips: %d, is_survive: %s", player.md5, player.chips, player.is_survive)
+                logging.info("[OTHER] player name: %s, chips: %d, is_survive: %s, is_human=%s.", player.md5, player.chips, player.is_survive, player.is_human)
 
         self._survive_player_num = len(self.players) + 1
         for player in self.players:
             if not player.is_survive:
                 self._survive_player_num -= 1
+
+        # list players chips rank
+        ranks = sorted(self.players, key=attrgetter('chips'), reverse=True)
+        for index, player in enumerate(ranks):
+            if type(player) is Bot:
+                logging.info("[AiCEE] [%s] current player %s by chips %s. ", (index+1), player.md5, player.chips)
+            else:
+                logging.info("[OTHER] [%s] current player %s rank by chips %s", (index+1), player.md5, player.chips)
+
 
     def update_action(self, action):
         someone_all_in = False
@@ -120,8 +143,12 @@ class Table(object):
             if player.allin:
                 logging.info("player name: %s, chips: %s, all in: %s", player.md5, player.chips, player.allin)
                 someone_all_in = True
-        logging.info("player name: %s, action: %s, chips: %s",
-                     action.playerName, action.action, action.chips)
+        if hasattr(action, "amount"):
+            logging.info("player name: %s, action: %s, amount:%s, chips: %s",
+                     action.playerName, action.action, action.amount, action.chips)
+        else:
+            logging.info("player name: %s, action: %s, amount:%s, chips: %s",
+                         action.playerName, action.action, 0, action.chips)
 
     def update_winners(self, winners):
         for winner in winners:
@@ -129,10 +156,9 @@ class Table(object):
 
     def end(self):
         player = self.find_player_by_name(settings.bot_name)
-        if player:
+        if type(player) is Bot:
             player.join()
-        self.players.clear()
-        self._survive_player_num = 0
+        self._reset()
 
     def get_survive_player_num(self):
         return self._survive_player_num

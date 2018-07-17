@@ -105,8 +105,7 @@ class Bot(Player):
         # pre-flop strength
         if table.stages.index(table.round_name) == 0:
             win_prob = HandEvaluator().evaluate_preflop_win_prob(self.cards, table.get_survive_player_num())
-
-        # flop, flop, turn, river strength (MonteCarlo)
+        # flop, turn, river strength (using MonteCarlo)
         else:
             win_prob = HandEvaluator().evaluate_postflop_win_prob(self.cards, table.board, len(table.players))
 
@@ -115,6 +114,9 @@ class Bot(Player):
 
         # rule-based strategy
         threshold = StrategyEvaluator().evaluate(table, win_prob, chip)
+
+        logger.info("After evaluator, the win_prob is %f", win_prob)
+        logger.info("allin: %f, raise: %f, call: %f, check: %f", threshold[0], threshold[1], threshold[2], threshold[3])
 
         if is_bet_event:
             self._take_action(table, "__bet", Player.Actions.BET, chip)
@@ -132,7 +134,7 @@ class Bot(Player):
 
     def _take_action(self, table, event_name, action, amount=0):
 
-        logging.info("The Actions is (%s).", super(Bot, self).ACTIONS_CLASS_TO_STRING[action.value])
+        logging.info("The Actions is (%s), amount (%d)", super(Bot, self).ACTIONS_CLASS_TO_STRING[action.value], amount)
 
         # If the action is 'bet', the message must include an 'amount'
         if event_name == "__bet":
