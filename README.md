@@ -4,6 +4,8 @@ AiCEE is a Texas Poker bot by using multiple methods, such as rule-based method,
 - If you want to run AiCEE bot, you have to install these modules
   - Python 3
   - pipenv - Python Development Workflow for Humans.
+  - websocket-client
+  - ​
 
 ## How to install dependence modules
 

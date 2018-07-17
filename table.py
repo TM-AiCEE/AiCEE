@@ -5,10 +5,18 @@ import settings
 from singleton import SingletonMetaclass
 from player import Player, Bot
 from operator import attrgetter
+from enum import Enum
+
 
 class Table(object):
 
-    stages = ["Deal", "Flop", "Turn", "River"]
+    stages_name = ["Deal", "Flop", "Turn", "River"]
+
+    class STAGE(Enum):
+        Preflop = 0
+        Flop = 1
+        Turn = 2
+        River = 3
 
     def __init__(self, client=None, number=5274, status=0):
         self.client = client
@@ -25,7 +33,10 @@ class Table(object):
         self.total_bet = None
         self.init_chips = 0
         self.max_reload_count = 0
+
+        # customize for statistics
         self._survive_player_num = 0
+        self._winners = []
 
     def _reset(self):
         self.round_name = ""
@@ -41,15 +52,19 @@ class Table(object):
         self.max_reload_count = 0
         self._survive_player_num = 0
 
+        # customize for statistics
+        self._survive_player_num = 0
+        self._winners.clear()
+
     def find_player_by_md5(self, md5):
         for player in self.players:
             if player.md5 == md5:
                 return player
         return None
 
-    def find_player_by_name(self, name):
+    def get_bot_by_name(self, name):
         for player in self.players:
-            if player.md5 == name:
+            if type(player) is Bot and player.md5 == name:
                 return player
         return None
 
@@ -116,49 +131,71 @@ class Table(object):
             self.total_bet = data.totalBet
 
     def end_round(self):
-        # show all player chips
+        # calculate survive players
         for player in self.players:
-            if type(player) is Bot:
-                logging.info("[AiCEE] player name: %s, chips: %d, is_survive: %s, is_human=%s.", player.md5, player.chips, player.is_survive, player.is_human)
-            else:
-                logging.info("[OTHER] player name: %s, chips: %d, is_survive: %s, is_human=%s.", player.md5, player.chips, player.is_survive, player.is_human)
-
-        self._survive_player_num = len(self.players) + 1
-        for player in self.players:
-            if not player.is_survive:
-                self._survive_player_num -= 1
+            if player.is_survive:
+                self._survive_player_num += 1
 
         # list players chips rank
         ranks = sorted(self.players, key=attrgetter('chips'), reverse=True)
         for index, player in enumerate(ranks):
             if type(player) is Bot:
-                logging.info("[AiCEE] [%s] current player %s by chips %s. ", (index+1), player.md5, player.chips)
+                logging.info("[AiCEE] [%s] player %s, chips %s", (index+1), player.md5, player.chips)
             else:
-                logging.info("[OTHER] [%s] current player %s rank by chips %s", (index+1), player.md5, player.chips)
+                logging.info("[OTHER] [%s] player %s, chips %s", (index+1), player.md5, player.chips)
 
-
+    #
+    # __show_action
+    #
     def update_action(self, action):
-        someone_all_in = False
+
         for player in self.players:
-            if player.allin:
+            if player.allin and player.is_survive:
                 logging.info("player name: %s, chips: %s, all in: %s", player.md5, player.chips, player.allin)
-                someone_all_in = True
+
         if hasattr(action, "amount"):
             logging.info("player name: %s, action: %s, amount:%s, chips: %s",
-                     action.playerName, action.action, action.amount, action.chips)
+                         action.playerName, action.action, action.amount, action.chips)
         else:
             logging.info("player name: %s, action: %s, amount:%s, chips: %s",
                          action.playerName, action.action, 0, action.chips)
 
-    def update_winners(self, winners):
-        for winner in winners:
-            logging.debug("The winner is (%s)-(%s), chips:(%s)", winner.playerName, winner.hand.message, winner.chips)
+        logging.info("current total bet: %d", self.total_bet)
 
-    def end(self):
-        player = self.find_player_by_name(settings.bot_name)
-        if type(player) is Bot:
-            player.join()
+    #
+    # Game Over
+    #
+    # "playerName": "andy(MD5 Hash)",
+    # "hand": {
+    #     "cards": [
+    #         "AD",
+    #         "QH",
+    #         "8S",
+    #         "QC",
+    #         "QS",
+    #         "QD",
+    #         "2S"
+    #   ],
+    #    "rank": 290.2048,
+    #    "message": "Four of a kind"
+    # },
+    # "chips": 15900
+    def update_winners_info(self, winners):
+        for winner in winners:
+            self._winners.append(winner)
+            player = self.get_bot_by_name(settings.bot_name)
+            if player.md5 == winner.playerName:
+                logging.info("[AiCEE] The winner is (%s)-(%s), chips:(%s)",
+                             winner.playerName, winner.hand.message, winner.chips)
+            else:
+                logging.info("[OTHER] The winner is (%s)-(%s), chips:(%s)",
+                             winner.playerName, winner.hand.message, winner.chips)
+
+    def game_over(self):
         self._reset()
+        bot = self.get_bot_by_name(settings.bot_name)
+        if bot is not None:
+            bot.join()
 
     def get_survive_player_num(self):
         return self._survive_player_num

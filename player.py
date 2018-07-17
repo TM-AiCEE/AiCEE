@@ -69,10 +69,9 @@ class Player(object):
 
 
 class Bot(Player):
-    def __init__(self, client, name, number=0):
+    def __init__(self, client, name):
         self.client = client
         self.minibet = None
-        self.number = number
         self.name = name
         md5 = hashlib.md5(name.encode('utf-8')).hexdigest()
         super(Bot, self).__init__(md5)
@@ -100,41 +99,10 @@ class Bot(Player):
             }
         }))
 
-    def do_actions(self, table, is_bet_event=False):
-
-        # pre-flop strength
-        if table.stages.index(table.round_name) == 0:
-            win_prob = HandEvaluator().evaluate_preflop_win_prob(self.cards, table.get_survive_player_num())
-        # flop, turn, river strength (using MonteCarlo)
-        else:
-            win_prob = HandEvaluator().evaluate_postflop_win_prob(self.cards, table.board, len(table.players))
-
-        # chip evaluator based on win_prob
-        chip = ChipEvaluator(table).evaluate(win_prob, is_bet_event)
-
-        # rule-based strategy
-        threshold = StrategyEvaluator().evaluate(table, win_prob, chip)
-
-        logger.info("After evaluator, the win_prob is %f", win_prob)
-        logger.info("allin: %f, raise: %f, call: %f, check: %f", threshold[0], threshold[1], threshold[2], threshold[3])
-
-        if is_bet_event:
-            self._take_action(table, "__bet", Player.Actions.BET, chip)
-        else:
-            if win_prob >= threshold[0]:
-                self._take_action(table, "__action", Player.Actions.ALLIN)
-            elif win_prob >= threshold[1]:
-                self._take_action(table, "__action", Player.Actions.RAISE)
-            elif win_prob >= threshold[2]:
-                self._take_action(table, "__action", Player.Actions.CALL)
-            elif win_prob >= threshold[3]:
-                self._take_action(table, "__action", Player.Actions.CHECK)
-            else:
-                self._take_action(table, "__action", Player.Actions.FOLD)
-
     def _take_action(self, table, event_name, action, amount=0):
 
-        logging.info("The Actions is (%s), amount (%d)", super(Bot, self).ACTIONS_CLASS_TO_STRING[action.value], amount)
+        logging.info("player's actions is (%s), amount (%d)",
+                     super(Bot, self).ACTIONS_CLASS_TO_STRING[action.value], amount)
 
         # If the action is 'bet', the message must include an 'amount'
         if event_name == "__bet":
@@ -183,3 +151,37 @@ class Bot(Player):
                     }
                 }))
 
+    def do_actions(self, table, is_bet_event=False):
+
+        # pre-flop strength
+        if table.stages.index(table.round_name) == table.STAGE.Preflop:
+            win_prob = HandEvaluator().evaluate_preflop_win_prob(self.cards, table.get_survive_player_num())
+
+        # flop, turn, river strength (using MonteCarlo)
+        else:
+            win_prob = HandEvaluator().evaluate_postflop_win_prob(self.cards, table.board, len(table.players))
+
+        # chip evaluator based on win_prob
+        chip = ChipEvaluator(table).evaluate(win_prob, is_bet_event)
+
+        # rule-based strategy
+        threshold = StrategyEvaluator().evaluate(table, win_prob, chip)
+
+        logger.info("after evaluator, the win_prob is %f", win_prob)
+        logger.info("allin: %f, raise: %f, call: %f, check: %f",
+                    threshold[Player.Actions.ALLIN.value], threshold[Player.Actions.RAISE.value],
+                    threshold[Player.Actions.CALL.value], threshold[Player.Actions.CHECK.value])
+
+        if is_bet_event:
+            self._take_action(table, "__bet", Player.Actions.BET, chip)
+        else:
+            if win_prob >= threshold[Player.Actions.ALLIN.value]:
+                self._take_action(table, "__action", Player.Actions.ALLIN)
+            elif win_prob >= threshold[Player.Actions.RAISE.value]:
+                self._take_action(table, "__action", Player.Actions.RAISE)
+            elif win_prob >= threshold[Player.Actions.CALL.value]:
+                self._take_action(table, "__action", Player.Actions.CALL)
+            elif win_prob >= threshold[Player.Actions.CHECK.value]:
+                self._take_action(table, "__action", Player.Actions.CHECK)
+            else:
+                self._take_action(table, "__action", Player.Actions.FOLD)

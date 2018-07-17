@@ -123,8 +123,8 @@ def game_over(message):
     if t:
         t.update_players(d.players)
         t.update_table(d.table)
-        t.update_winners(d.winners)
-        t.end()
+        t.update_winners_info(d.winners)
+        t.game_over()
 
 
 
