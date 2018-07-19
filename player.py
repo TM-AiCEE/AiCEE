@@ -4,9 +4,8 @@ import logging
 import hashlib
 
 from enum import Enum
-from plugins.evaluation.model import HandEvaluator
+from plugins.evaluation.handevaluator import HandEvaluator
 from plugins.evaluation.chipevaluator import ChipEvaluator
-from plugins.evaluation.strategy import StrategyEvaluator
 
 logger = logging.getLogger(__name__)
 
@@ -99,10 +98,7 @@ class Bot(Player):
             }
         }))
 
-    def _take_action(self, table, event_name, action, amount=0):
-
-        logging.info("player's actions is (%s), amount (%d)",
-                     super(Bot, self).ACTIONS_CLASS_TO_STRING[action.value], amount)
+    def _take_action(self, event_name, action, amount=0):
 
         # If the action is 'bet', the message must include an 'amount'
         if event_name == "__bet":
@@ -151,37 +147,44 @@ class Bot(Player):
                     }
                 }))
 
+    def _decide_action(self, win_prob, thresholds):
+
+        if win_prob >= thresholds["allin"]:
+            return Player.Actions.ALLIN
+        elif win_prob >= thresholds["raise"]:
+            return Player.Actions.RAISE
+        elif win_prob >= thresholds["call"]:
+            return Player.Actions.CALL
+        elif win_prob >= thresholds["check"]:
+            return Player.Actions.CHECK
+        else:
+            return Player.Actions.FOLD
+
     def do_actions(self, table, is_bet_event=False):
 
         # pre-flop strength
-        if table.stages.index(table.round_name) == table.STAGE.Preflop:
-            win_prob = HandEvaluator().evaluate_preflop_win_prob(self.cards, table.get_survive_player_num())
+        if table.stages_name.index(table.round_name) == table.STAGE.Preflop.value:
+            win_prob = HandEvaluator().evaluate_preflop_win_prob(self.cards, len(table.players))
+            thresholds = {"check": 0.1, "call": 0.1, "allin": 0.98, "bet": 0.8, "raise": 0.9, "chipsguard": 0.5}
 
         # flop, turn, river strength (using MonteCarlo)
         else:
-            win_prob = HandEvaluator().evaluate_postflop_win_prob(self.cards, table.board, len(table.players))
+            win_prob = HandEvaluator().evaluate_postflop_win_prob(self.cards, table.board)
+            thresholds = {"check": 0.1, "call": 0.1, "allin": 0.98, "bet": 0.8, "raise": 0.9, "chipsguard": 0.5}
 
-        # chip evaluator based on win_prob
-        chip = ChipEvaluator(table).evaluate(win_prob, is_bet_event)
+        # chip evaluator based at this round
+        chip_amount = ChipEvaluator(table).evaluate(win_prob, is_bet_event)
 
-        # rule-based strategy
-        threshold = StrategyEvaluator().evaluate(table, win_prob, chip)
+        logger.info("[do_actions] after evaluator, the win_prob is %f", win_prob)
+        logger.info("[do_actions] allin: %f, raise: %f, call: %f, check: %f",
+                    thresholds["allin"], thresholds["raise"],
+                    thresholds["call"], thresholds["check"])
 
-        logger.info("after evaluator, the win_prob is %f", win_prob)
-        logger.info("allin: %f, raise: %f, call: %f, check: %f",
-                    threshold[Player.Actions.ALLIN.value], threshold[Player.Actions.RAISE.value],
-                    threshold[Player.Actions.CALL.value], threshold[Player.Actions.CHECK.value])
-
+        # action decision
         if is_bet_event:
-            self._take_action(table, "__bet", Player.Actions.BET, chip)
+            self._take_action("__bet", Player.Actions.BET, chip_amount)
         else:
-            if win_prob >= threshold[Player.Actions.ALLIN.value]:
-                self._take_action(table, "__action", Player.Actions.ALLIN)
-            elif win_prob >= threshold[Player.Actions.RAISE.value]:
-                self._take_action(table, "__action", Player.Actions.RAISE)
-            elif win_prob >= threshold[Player.Actions.CALL.value]:
-                self._take_action(table, "__action", Player.Actions.CALL)
-            elif win_prob >= threshold[Player.Actions.CHECK.value]:
-                self._take_action(table, "__action", Player.Actions.CHECK)
-            else:
-                self._take_action(table, "__action", Player.Actions.FOLD)
+            action = self._decide_action(win_prob, thresholds)
+            self._take_action("__action", action)
+            logging.info("player's actions is (%s), amount (%d)",
+                         super(Bot, self).ACTIONS_CLASS_TO_STRING[action.value], chip_amount)

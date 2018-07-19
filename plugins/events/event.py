@@ -97,8 +97,6 @@ def update_board_info(message):
     d = message.data
     t = table_mgr.current()
 
-    logging.info("round name: %s", t.round_name)
-
     if t:
         t.update_table(d.table)
         t.update_players(d.players)

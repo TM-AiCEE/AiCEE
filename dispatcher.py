@@ -23,6 +23,6 @@ class MessageDispatcher(object):
         for key, value in self.events.items():
             if key == data.eventName:
                 self.events[key](data)
-                logging.info('receive_from_events [%s] from server.', data.eventName)
+                logging.debug('receive_from_events [%s] from server.', data.eventName)
 
 

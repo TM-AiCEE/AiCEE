@@ -39,22 +39,17 @@ class HandEvaluator(object):
     def _calculate_win_prob(self, hands, boards):
         board_cards = boards
 
-        # PRE-FLOP, FLOP, TURN, RIVER, HAND OVER
         n = self._simulation_number
-        total_win_prob = 0
         evaluator = Evaluator()
 
-        Card.print_pretty_cards(hands + boards)
+        # current hand win_prob
+        rank = evaluator.evaluate(hands, board_cards)
+        rank_class = evaluator.get_rank_class(rank)
+        class_string = evaluator.class_to_string(rank_class)
+        win_prob = 1.0 - evaluator.get_five_card_rank_percentage(rank)
 
-        if len(boards) >= 3:
-            logging.debug("hands+boards:")
-            Card.print_pretty_cards(hands+boards)
-            rank = evaluator.evaluate(hands, board_cards)
-            rank_class = evaluator.get_rank_class(rank)
-            class_string = evaluator.class_to_string(rank_class)
-            win_prob = 1.0 - evaluator.get_five_card_rank_percentage(rank)
-            logging.debug("hand = {}, percentage rank among all hands = {}".format(class_string, win_prob))
-
+        # simulation hand+boards+draw(2) win_prob
+        total_win_prob = 0
         for i in range(n):
             to_draw_number = 5 - len(board_cards)
             board_cards = self._calculate_cards_to_draw(board_cards, to_draw_number)
@@ -62,25 +57,29 @@ class HandEvaluator(object):
             win_prob = 1.0 - evaluator.get_five_card_rank_percentage(rank)
             total_win_prob += win_prob
 
-        win_prob = total_win_prob / n
-        logging.info("simulation win_prob: %s", win_prob)
-        return win_prob
+        sim_win_prob = total_win_prob / n
 
-    def evaluate_postflop_win_prob(self, cards, boards, num_player):
+        return win_prob, sim_win_prob, class_string
+
+    def evaluate_postflop_win_prob(self, cards, boards):
         hands = self._converter_to_card(cards)
         board_cards = self._converter_to_card(boards)
-        win_prob = self._calculate_win_prob(hands, board_cards)
-        return win_prob
+
+        win_prob, sim_win_prob, class_string = self._calculate_win_prob(hands, board_cards)
+
+        logging.info("[evaluate_postflop_win_prob] hand: %s, win_prob: %s, hand= {%s}, sim win_prob: %s",
+                     Card.print_pretty_cards(hands + board_cards), win_prob, class_string, sim_win_prob)
+
+        if win_prob > sim_win_prob:
+            return win_prob
+
+        return sim_win_prob
 
     def evaluate_preflop_win_prob(self, cards, num_player):
         cards = self._converter_to_card(cards)
         cards = sorted(cards, reverse=True)
-        Card.print_pretty_cards(cards)
 
         key = ''.join([Card.int_to_str(card)[0] for card in cards])
-
-        rank1 = Card.get_rank_int(cards[0])
-        rank2 = Card.get_rank_int(cards[1])
 
         if Card.get_rank_int(cards[0]) != Card.get_rank_int(cards[1]):
             if Card.get_suit_int(cards[0]) == Card.get_suit_int(cards[1]):
@@ -88,13 +87,15 @@ class HandEvaluator(object):
             else:
                 key = key + "o"
 
+        odds = 0
         for item_key, item_value in self._lookup.items():
-            if item_key == key:
-                logging.info("%s, %s, %s", item_key, str(num_player-1), self._lookup[key][0].get(str(num_player-1)))
-                if num_player - 1 < 0:
-                    odds = float(self._lookup[key][0].get(str(1)))
-                else:
-                    odds = float(self._lookup[key][0].get(str(num_player-1)))
+            if item_key == key and num_player != 0:
+                logging.info("[evaluate_preflop_win_prob] %s, %s, %s, %s",
+                             Card.print_pretty_cards(cards),
+                             item_key, str(num_player-1), self._lookup[key][0].get(str(num_player-1)))
+                odds = float(self._lookup[key][0].get(str(num_player-1)))
+
+                # pair
                 if Card.get_rank_int(cards[0]) == Card.get_rank_int(cards[1]):
                     odds *= 2.0
         return odds

@@ -211,4 +211,4 @@ class Card:
             else:
                 output += str(Card.int_to_pretty_str(c)) + " "
     
-        print(output)
+        return (output)

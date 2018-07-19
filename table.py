@@ -151,40 +151,21 @@ class Table(object):
 
         for player in self.players:
             if player.allin and player.is_survive:
-                logging.info("player name: %s, chips: %s, all in: %s", player.md5, player.chips, player.allin)
+                logging.info("[%5s] player name: %s, chips: %s, all in: %s",
+                             self.round_name, player.md5[:5], player.chips, player.allin)
 
         if hasattr(action, "amount"):
-            logging.info("player name: %s, action: %s, amount:%s, chips: %s",
-                         action.playerName, action.action, action.amount, action.chips)
+            logging.info("[%5s] player name: %s, action: %5s, amount:%4s, chips: %5s, total bet: %4d",
+                         self.round_name, action.playerName[:5], action.action, action.amount, action.chips, self.total_bet)
         else:
-            logging.info("player name: %s, action: %s, amount:%s, chips: %s",
-                         action.playerName, action.action, 0, action.chips)
+            logging.info("[%5s] player name: %s, action: %5s, amount:%4s, chips: %5s, total bet: %4d",
+                         self.round_name, action.playerName[:5], action.action, 0, action.chips, self.total_bet)
 
-        logging.info("current total bet: %d", self.total_bet)
-
-    #
-    # Game Over
-    #
-    # "playerName": "andy(MD5 Hash)",
-    # "hand": {
-    #     "cards": [
-    #         "AD",
-    #         "QH",
-    #         "8S",
-    #         "QC",
-    #         "QS",
-    #         "QD",
-    #         "2S"
-    #   ],
-    #    "rank": 290.2048,
-    #    "message": "Four of a kind"
-    # },
-    # "chips": 15900
     def update_winners_info(self, winners):
         for winner in winners:
             self._winners.append(winner)
             player = self.get_bot_by_name(settings.bot_name)
-            if player.md5 == winner.playerName:
+            if player and player.md5 == winner.playerName:
                 logging.info("[AiCEE] The winner is (%s)-(%s), chips:(%s)",
                              winner.playerName, winner.hand.message, winner.chips)
             else:
