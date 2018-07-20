@@ -201,6 +201,8 @@ class Table(object):
     def game_over(self):
         if self._mine is not None:
             self._mine.join()
+        self.players.clear()
+        self.players.append(self._mine)
 
     def get_survive_player_num(self):
         return self._survive_player_num

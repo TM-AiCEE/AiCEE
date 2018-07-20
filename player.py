@@ -201,6 +201,24 @@ class Bot(Player):
 
                 logging.info("[do_actions] my actions is (%s), amount (%d)",
                              super(Bot, self).ACTIONS_CLASS_TO_STRING[action.value], chip_amount)
+
+                # some player all-in rules
+                if table.has_allin():
+                    logging.info("[do_actions] apply allin rules")
+                    if win_prob <= 0.90:
+                        action = Player.Actions.FOLD
+
+                # chips rate rules
+                chips_rate = self.chips / table.total_chips()
+                logging.info("[do_actions] my chips rate is: %f", chips_rate)
+                if chips_rate >= 40 and win_prob <= 0.90:
+                    action = Player.Actions.FOLD
+
+                self._take_action("__action", action)
+
+                logging.info("[do_actions] my actions is (%s), amount (%d)",
+                             super(Bot, self).ACTIONS_CLASS_TO_STRING[action.value], chip_amount)
+
             self._take_action("__action", Player.Actions.FOLD)
 
         else:
