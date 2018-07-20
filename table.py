@@ -175,6 +175,11 @@ class Table(object):
                              (index+1), player.md5[:5], player.chips, player.chips/total_chips,
                              card, message, rank, win_money)
 
+        for player in self.players:
+            player.cards.clear()
+
+        self.board.clear()
+
     #
     # __show_action
     #
@@ -205,7 +210,7 @@ class Table(object):
 
     def game_over(self):
         self.players.clear()
-
+        self._winners.clear()
         player = Bot(self.client, settings.bot_name)
         player.join()
         self.players.append(player)
