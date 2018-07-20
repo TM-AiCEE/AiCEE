@@ -6,7 +6,7 @@ from singleton import SingletonMetaclass
 from player import Player, Bot
 from operator import attrgetter
 from enum import Enum
-
+from plugins.treys import Card
 
 class Table(object):
 
@@ -37,6 +37,7 @@ class Table(object):
         # customize for statistics
         self._survive_player_num = 0
         self._winners = []
+        self._mine = None
 
     def _reset(self):
         self.round_name = ""
@@ -73,6 +74,9 @@ class Table(object):
         if player is None:
             player = Player(md5=md5_name)
             self.players.append(player)
+
+    def set_bot(self, player):
+        self._mine = player
 
     def add_player(self, player):
         self.players.append(player)
@@ -130,19 +134,41 @@ class Table(object):
         if hasattr(data, "totalBet"):
             self.total_bet = data.totalBet
 
+    def new_round(self):
+        logging.info("========== new round ========")
+
     def end_round(self):
         # calculate survive players
+        total_chips = 0
         for player in self.players:
             if player.is_survive:
                 self._survive_player_num += 1
+                total_chips += player.chips
 
         # list players chips rank
+        win_money = 0
+        message, card, rank = "", "", ""
+
         ranks = sorted(self.players, key=attrgetter('chips'), reverse=True)
         for index, player in enumerate(ranks):
+
+            if hasattr(player, 'win_money'):
+                win_money = player.win_money
+
+            # end of round
+            if hasattr(player, 'hand'):
+                message = player.hand.message
+                card = player.hand.cards
+                rank = player.hand.rank
+
             if type(player) is Bot:
-                logging.info("[AiCEE] [%s] player %s, chips %s", (index+1), player.md5, player.chips)
+                logging.info("[AiCEE] [%2s] player %s, chips %5s (%3f), %s (%16s)(%4d), win_money: %5s",
+                             (index+1), player.md5[:5], player.chips, player.chips/total_chips,
+                             card, message, rank, win_money)
             else:
-                logging.info("[OTHER] [%s] player %s, chips %s", (index+1), player.md5, player.chips)
+                logging.info("[OTHER] [%2s] player %s, chips %5s (%3f), %s (%16s)(%4d), win_money: %5s",
+                             (index+1), player.md5[:5], player.chips, player.chips/total_chips,
+                             card, message, rank, win_money)
 
     #
     # __show_action
@@ -151,7 +177,7 @@ class Table(object):
 
         for player in self.players:
             if player.allin and player.is_survive:
-                logging.info("[%5s] player name: %s, chips: %s, all in: %s",
+                logging.info("[%5s] player name: %s, chips: %5s, all in: %s",
                              self.round_name, player.md5[:5], player.chips, player.allin)
 
         if hasattr(action, "amount"):
@@ -166,20 +192,31 @@ class Table(object):
             self._winners.append(winner)
             player = self.get_bot_by_name(settings.bot_name)
             if player and player.md5 == winner.playerName:
-                logging.info("[AiCEE] The winner is (%s)-(%s), chips:(%s)",
+                logging.info("[AiCEE] The winner is (%s)-(%s), chips:(%5s)",
                              winner.playerName, winner.hand.message, winner.chips)
             else:
-                logging.info("[OTHER] The winner is (%s)-(%s), chips:(%s)",
+                logging.info("[OTHER] The winner is (%s)-(%s), chips:(%5s)",
                              winner.playerName, winner.hand.message, winner.chips)
 
     def game_over(self):
-        self._reset()
-        bot = self.get_bot_by_name(settings.bot_name)
-        if bot is not None:
-            bot.join()
+        if self._mine is not None:
+            self._mine.join()
 
     def get_survive_player_num(self):
         return self._survive_player_num
+
+    def has_allin(self):
+        someone_allin = False
+        for player in self.players:
+            if player.allin and player.is_survive:
+                someone_allin = True
+        return someone_allin
+
+    def total_chips(self):
+        total_chips = 0
+        for player in self.players:
+            total_chips += player.chips
+        return total_chips
 
 
 class TableManager(metaclass=SingletonMetaclass):

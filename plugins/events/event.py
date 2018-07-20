@@ -26,19 +26,18 @@ def new_peer_2(message):
     t = table_mgr.current()
 
     if t:
+        logger.info("table number is: %s", t.number)
         t.number = d.tableNumber
         t.status = d.tableStatus
-        logger.info("the table number is updated to %s", t.number)
+
 
     for pjson in d.players:
         player = t.find_player_by_md5(pjson.playerName)
         if player:
             player.is_online = pjson.isOnline
-            # logging.info("player (MD5(%s)), online status is: (%s).", player.md5, player.is_online)
         else:
             player = Player(pjson.playerName)
             player.is_online = pjson.isOnline
-            # t.add_player(player)
 
 
 @receive_from("__new_round")
@@ -49,7 +48,7 @@ def start_of_new_round(message):
     if t:
         t.update_table(d.table)
         t.update_players(d.players)
-        t.end_round()
+        t.new_round()
 
 
 @receive_from("__deal")

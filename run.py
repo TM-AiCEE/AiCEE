@@ -21,7 +21,7 @@ logging.basicConfig(**kw)
 def receive_from(name, flags=0):
     def wrapper(func):
         EventManager.events[name] = func
-        logging.info('registered receive_from "%s" to "%s"', func.__name__, name)
+        logging.debug('registered receive_from "%s" to "%s"', func.__name__, name)
         return func
 
     return wrapper
@@ -48,6 +48,7 @@ if __name__ == '__main__':
         bot.join()
 
         table_mgr = TableManager()
+        table_mgr.set_table(0, 0).set_bot(bot)
         table_mgr.set_table(0, 0).add_player(bot)
     except KeyboardInterrupt:
         client.on_close()

@@ -16,7 +16,7 @@ class EventManager(object):
 
     @staticmethod
     def init_event(plugin='plugins.events'):
-        logging.info('loading event plugin "%s"', plugin)
+        logging.debug('loading event plugin "%s"', plugin)
         path_name = None
 
         from importlib.util import find_spec as importlib_find

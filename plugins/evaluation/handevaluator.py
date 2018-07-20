@@ -89,7 +89,7 @@ class HandEvaluator(object):
 
         odds = 0
         for item_key, item_value in self._lookup.items():
-            if item_key == key and num_player != 0:
+            if item_key == key and num_player > 1:
                 logging.info("[evaluate_preflop_win_prob] %s, %s, %s, %s",
                              Card.print_pretty_cards(cards),
                              item_key, str(num_player-1), self._lookup[key][0].get(str(num_player-1)))

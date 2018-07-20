@@ -66,6 +66,14 @@ class Player(object):
         self.round_bet = player_info.round_bet
         self.cards = player_info.cards
 
+        # end of round
+        if hasattr(player_info, 'hand'):
+            self.hand = player_info.hand
+
+        # end of round
+        if hasattr(player_info, 'win_money'):
+            self.win_money = player_info.win_money
+
 
 class Bot(Player):
     def __init__(self, client, name):
@@ -165,26 +173,52 @@ class Bot(Player):
         # pre-flop strength
         if table.stages_name.index(table.round_name) == table.STAGE.Preflop.value:
             win_prob = HandEvaluator().evaluate_preflop_win_prob(self.cards, len(table.players))
-            thresholds = {"check": 0.1, "call": 0.1, "allin": 0.98, "bet": 0.8, "raise": 0.9, "chipsguard": 0.5}
+            thresholds = {"check": 0.1, "call": 0.1, "allin": 0.98, "bet": 0.7, "raise": 0.8, "chipsguard": 0.5}
 
         # flop, turn, river strength (using MonteCarlo)
         else:
             win_prob = HandEvaluator().evaluate_postflop_win_prob(self.cards, table.board)
-            thresholds = {"check": 0.1, "call": 0.1, "allin": 0.98, "bet": 0.8, "raise": 0.9, "chipsguard": 0.5}
+            thresholds = {"check": 0.3, "call": 0.3, "allin": 0.98, "bet": 0.7, "raise": 0.8, "chipsguard": 0.5}
 
         # chip evaluator based at this round
         chip_amount = ChipEvaluator(table).evaluate(win_prob, is_bet_event)
 
-        logger.info("[do_actions] after evaluator, the win_prob is %f", win_prob)
-        logger.info("[do_actions] allin: %f, raise: %f, call: %f, check: %f",
+        logger.info("[do_actions] after evaluate, the win_prob is %f", win_prob)
+        logger.info("[do_actions] thresholds: allin: %f, raise: %f, call: %f, check: %f",
                     thresholds["allin"], thresholds["raise"],
                     thresholds["call"], thresholds["check"])
 
         # action decision
         if is_bet_event:
-            self._take_action("__bet", Player.Actions.BET, chip_amount)
+            if win_prob > thresholds["bet"]:
+                action = Player.Actions.FOLD
+                if chip_amount <= self.chips * thresholds["chipsguard"]:
+                    action = Player.Actions.BET
+                    self._take_action("__bet", action, chip_amount)
+                else:
+                    action = Player.Actions.CHECK
+                    self._take_action("__action", action)
+
+                logging.info("[do_actions] my actions is (%s), amount (%d)",
+                             super(Bot, self).ACTIONS_CLASS_TO_STRING[action.value], chip_amount)
+            self._take_action("__action", Player.Actions.FOLD)
+
         else:
             action = self._decide_action(win_prob, thresholds)
+
+            # some player all-in rules
+            if table.has_allin():
+                logging.info("[do_actions] apply allin rules")
+                if win_prob <= 0.90:
+                    action = Player.Actions.FOLD
+
+            # chips rate rules
+            chips_rate = self.chips / table.total_chips()
+            logging.info("[do_actions] my chips rate is: %f", chips_rate)
+            if chips_rate >= 40 and win_prob <= 0.90:
+                action = Player.Actions.FOLD
+
             self._take_action("__action", action)
-            logging.info("player's actions is (%s), amount (%d)",
+
+            logging.info("[do_actions] my actions is (%s), amount (%d)",
                          super(Bot, self).ACTIONS_CLASS_TO_STRING[action.value], chip_amount)
