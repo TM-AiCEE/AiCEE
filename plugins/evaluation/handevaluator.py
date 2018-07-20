@@ -36,6 +36,9 @@ class HandEvaluator(object):
 
         return sample_board
 
+    def print_pretty_cards(self, cards):
+        return Card.print_pretty_cards(self._converter_to_card(cards))
+
     def _calculate_win_prob(self, hands, boards):
         board_cards = boards
 

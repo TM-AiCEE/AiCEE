@@ -7,6 +7,7 @@ from player import Player, Bot
 from operator import attrgetter
 from enum import Enum
 from plugins.treys import Card
+from plugins.evaluation.handevaluator import HandEvaluator
 
 class Table(object):
 
@@ -38,6 +39,7 @@ class Table(object):
         self._survive_player_num = 0
         self._winners = []
         self._mine = None
+        self._evaluator = HandEvaluator()
 
     def _reset(self):
         self.round_name = ""
@@ -158,7 +160,7 @@ class Table(object):
             # end of round
             if hasattr(player, 'hand'):
                 message = player.hand.message
-                card = player.hand.cards
+                card = self._evaluator.print_pretty_cards(player.hand.cards)
                 rank = player.hand.rank
 
             if type(player) is Bot:
@@ -191,7 +193,7 @@ class Table(object):
         for winner in winners:
             self._winners.append(winner)
             player = self.get_bot_by_name(settings.bot_name)
-            if player and player.md5 == winner.playerName:
+            if type(player) is Bot:
                 logging.info("[AiCEE] The winner is (%s)-(%s), chips:(%5s)",
                              winner.playerName, winner.hand.message, winner.chips)
             else:
