@@ -48,8 +48,7 @@ if __name__ == '__main__':
         bot.join()
 
         table_mgr = TableManager()
-        table_mgr.set_table(0, 0).set_bot(bot)
-        table_mgr.set_table(0, 0).add_player(bot)
+        table_mgr.set_table(client, 0, 0).add_player(bot)
     except KeyboardInterrupt:
         client.on_close()
 

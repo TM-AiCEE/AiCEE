@@ -1,6 +1,7 @@
 import logging
 import json
 import settings
+import hashlib
 
 from singleton import SingletonMetaclass
 from player import Player, Bot
@@ -67,7 +68,7 @@ class Table(object):
 
     def get_bot_by_name(self, name):
         for player in self.players:
-            if type(player) is Bot and player.md5 == name:
+            if type(player) is Bot and player.name == name:
                 return player
         return None
 
@@ -77,10 +78,11 @@ class Table(object):
             player = Player(md5=md5_name)
             self.players.append(player)
 
-    def set_bot(self, player):
-        self._mine = player
+    def bot(self, player):
+        return self._mine
 
     def add_player(self, player):
+        self._mine = player
         self.players.append(player)
         logging.info("player (MD5(%s)) joined.", player.md5)
 
@@ -163,7 +165,8 @@ class Table(object):
                 card = self._evaluator.print_pretty_cards(player.hand.cards)
                 rank = player.hand.rank
 
-            if type(player) is Bot:
+            name = settings.bot_name
+            if player.md5 == hashlib.md5(name.encode('utf-8')).hexdigest():
                 logging.info("[AiCEE] [%2s] player %s, chips %5s (%3f), %s (%16s)(%4d), win_money: %5s",
                              (index+1), player.md5[:5], player.chips, player.chips/total_chips,
                              card, message, rank, win_money)
@@ -192,8 +195,8 @@ class Table(object):
     def update_winners_info(self, winners):
         for winner in winners:
             self._winners.append(winner)
-            player = self.get_bot_by_name(settings.bot_name)
-            if player.md5 == winner.playerName:
+            name = settings.bot_name
+            if winner.playerName == hashlib.md5(name.encode('utf-8')).hexdigest():
                 logging.info("[AiCEE] The winner is (%s)-(%16s), chips:(%5s)",
                              winner.playerName[:5], winner.hand.message, winner.chips)
             else:
@@ -201,10 +204,11 @@ class Table(object):
                              winner.playerName[:5], winner.hand.message, winner.chips)
 
     def game_over(self):
-        if self._mine is not None:
-            self._mine.join()
         self.players.clear()
-        self.players.append(self._mine)
+
+        player = Bot(self.client, settings.bot_name)
+        player.join()
+        self.players.append(player)
 
     def get_survive_player_num(self):
         return self._survive_player_num
@@ -230,8 +234,8 @@ class TableManager(metaclass=SingletonMetaclass):
     def _add_table(self, table):
         self.tables.append(table)
 
-    def set_table(self, number, status):
-        table = Table(number=number, status=status)
+    def set_table(self, client, number, status):
+        table = Table(client, number, status)
         self._add_table(table)
         return table
 

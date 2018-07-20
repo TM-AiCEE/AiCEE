@@ -3,6 +3,8 @@ import logging
 from run import receive_from
 from player import Player, Bot
 from table import TableManager
+import hashlib
+import settings
 
 logger = logging.getLogger(__name__)
 table_mgr = TableManager()
@@ -26,10 +28,9 @@ def new_peer_2(message):
     t = table_mgr.current()
 
     if t:
-        logger.info("table number is: %s", t.number)
         t.number = d.tableNumber
         t.status = d.tableStatus
-
+        logger.info("[__new_peer_2] table number is: %s", t.number)
 
     for pjson in d.players:
         player = t.find_player_by_md5(pjson.playerName)
@@ -70,8 +71,8 @@ def handle_action_requests(message):
         t.update_table(d.game)
         t.update_players(d.game.players)
 
-        player = t.find_player_by_md5(d.self.playerName)
-        if player is not None and type(player) is Bot:
+        player = t.find_player_by_md5(hashlib.md5(settings.bot_name.encode('utf-8')).hexdigest())
+        if player:
             player.update_self(d.self)
             player.do_actions(t)
 
@@ -85,8 +86,8 @@ def request_bet(message):
         t.update_table(d.game)
         t.update_players(d.game.players)
 
-        player = t.find_player_by_md5(d.self.playerName)
-        if player is not None and type(player) is Bot:
+        player = t.find_player_by_md5(hashlib.md5(settings.bot_name.encode('utf-8')).hexdigest())
+        if player:
             player.update_self(d.self)
             player.do_actions(t, is_bet_event)
 

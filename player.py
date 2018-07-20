@@ -211,7 +211,7 @@ class Bot(Player):
                 # chips rate rules
                 chips_rate = self.chips / table.total_chips()
                 logging.info("[do_actions] my chips rate is: %f", chips_rate)
-                if chips_rate >= 40 and win_prob <= 0.90:
+                if chips_rate >= 0.5 and win_prob <= 0.90:
                     action = Player.Actions.FOLD
 
                 self._take_action("__action", action)
@@ -233,7 +233,7 @@ class Bot(Player):
             # chips rate rules
             chips_rate = self.chips / table.total_chips()
             logging.info("[do_actions] my chips rate is: %f", chips_rate)
-            if chips_rate >= 40 and win_prob <= 0.90:
+            if chips_rate >= 0.5 and win_prob <= 0.90:
                 action = Player.Actions.FOLD
 
             self._take_action("__action", action)

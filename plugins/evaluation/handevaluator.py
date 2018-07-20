@@ -27,12 +27,16 @@ class HandEvaluator(object):
     def _calculate_cards_to_draw(boards, cards_to_draw):
         sample_board = boards
 
-        board = Deck().draw(cards_to_draw)
+        desk = Deck()
+
+        board = desk.draw(cards_to_draw)
         if type(board) is int:
             sample_board.append(board)
         else:
             for card in board:
                 sample_board.append(card)
+
+        desk.shuffle()
 
         return sample_board
 
