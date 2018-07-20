@@ -118,6 +118,7 @@ class Table(object):
                 player.update(info)
 
     def update_table(self, data):
+        self.board.clear()
         self.board = data.board
         self.round_count = data.roundCount
         self.raise_count = data.raiseCount
