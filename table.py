@@ -193,12 +193,12 @@ class Table(object):
         for winner in winners:
             self._winners.append(winner)
             player = self.get_bot_by_name(settings.bot_name)
-            if type(player) is Bot:
-                logging.info("[AiCEE] The winner is (%s)-(%s), chips:(%5s)",
-                             winner.playerName, winner.hand.message, winner.chips)
+            if player.md5 == winner.playerName:
+                logging.info("[AiCEE] The winner is (%s)-(%16s), chips:(%5s)",
+                             winner.playerName[:5], winner.hand.message, winner.chips)
             else:
-                logging.info("[OTHER] The winner is (%s)-(%s), chips:(%5s)",
-                             winner.playerName, winner.hand.message, winner.chips)
+                logging.info("[OTHER] The winner is (%s)-(%16s), chips:(%5s)",
+                             winner.playerName[:5], winner.hand.message, winner.chips)
 
     def game_over(self):
         if self._mine is not None:
