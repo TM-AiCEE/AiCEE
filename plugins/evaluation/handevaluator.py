@@ -11,11 +11,12 @@ class HandEvaluator(object):
     def __init__(self):
         self._simulation_number = 10000
         self._win_rate = 0
+        self._deck = Deck()
         self._lookup = json.load(open("data/preflop_odds.json"))
 
     @staticmethod
     def _converter_to_card(cards_from_s):
-        cards = []
+        cards = list()
 
         for card in cards_from_s:
             c = card.lower().capitalize()
@@ -27,16 +28,17 @@ class HandEvaluator(object):
     def _calculate_cards_to_draw(boards, cards_to_draw):
         sample_board = boards
 
-        desk = Deck()
-
-        board = desk.draw(cards_to_draw)
+        board = self._desk.draw(cards_to_draw)
         if type(board) is int:
             sample_board.append(board)
         else:
             for card in board:
                 sample_board.append(card)
 
-        desk.shuffle()
+        for card in sample_board:
+            if card in self._deck.cards:
+                self._deck.remove(card)
+            logging.info('Unused cards: {0}'.format(len(self._deck.cards)))
 
         return sample_board
 
@@ -58,12 +60,10 @@ class HandEvaluator(object):
         # simulation hand+boards+draw(2) win_prob
         total_win_prob = 0
         for i in range(n):
-            to_draw_number = 5 - len(board_cards)
-            board_cards = self._calculate_cards_to_draw(board_cards, to_draw_number)
-            rank = evaluator.evaluate(board_cards, hands)
-            win_prob = 1.0 - evaluator.get_five_card_rank_percentage(rank)
+            hand = deck.draw(2)
+            sim_rank = evaluator.evaluate(hand, boards)
+            win_prob = 1.0 - evaluator.get_five_card_rank_percentage(sim_rank)
             total_win_prob += win_prob
-
         sim_win_prob = total_win_prob / n
 
         return win_prob, sim_win_prob, class_string
