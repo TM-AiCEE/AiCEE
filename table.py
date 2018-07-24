@@ -2,6 +2,7 @@ import logging
 import json
 import settings
 import hashlib
+import time
 
 from singleton import SingletonMetaclass
 from player import Player, Bot
@@ -212,6 +213,7 @@ class Table(object):
     def game_over(self):
         self.players.clear()
         self._winners.clear()
+        time.sleep(30)
         player = Bot(self.client, settings.bot_name)
         player.join()
         self.players.append(player)

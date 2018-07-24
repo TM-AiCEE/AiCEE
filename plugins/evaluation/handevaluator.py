@@ -1,9 +1,17 @@
 import logging
 import json
 
+from random import sample
 from plugins.treys import Card
 from plugins.treys import Evaluator
 from plugins.treys import Deck
+
+class PseudoDesk:
+    def __init__(self, deck):
+        self._cards = list(deck)
+
+    def draw(self, n=2):
+        return sample(self._cards, n)
 
 
 class HandEvaluator(object):
@@ -35,10 +43,10 @@ class HandEvaluator(object):
             for card in board:
                 sample_board.append(card)
 
-        for card in sample_board:
-            if card in self._deck.cards:
-                self._deck.remove(card)
-            logging.info('Unused cards: {0}'.format(len(self._deck.cards)))
+        #for card in sample_board:
+        #    if card in self._deck.cards:
+        #        self._deck.remove(card)
+        #    logging.info('Unused cards: {0}'.format(len(self._deck.cards)))
 
         return sample_board
 
@@ -59,8 +67,9 @@ class HandEvaluator(object):
 
         # simulation hand+boards+draw(2) win_prob
         total_win_prob = 0
+        pd = PseudoDesk(self._deck.cards)
         for i in range(n):
-            hand = deck.draw(2)
+            hand = pd.draw(2)
             sim_rank = evaluator.evaluate(hand, boards)
             win_prob = 1.0 - evaluator.get_five_card_rank_percentage(sim_rank)
             total_win_prob += win_prob
