@@ -4,20 +4,25 @@ class ChipEvaluator(object):
         self.table = table
 
     @staticmethod
-    def evaluate(win_rate, is_bet_event=False, smallblind=10, bigblind=20):
+    def evaluate(t, win_rate, is_bet_event=False, smallblind=10, bigblind=20):
+
+        player = t.bot()
+        my_chips = player.chips
+
+        chips_amount = 0
 
         if is_bet_event and win_rate > 0.9:
-            return bigblind
+            chips_amount = my_chips * 0.4
         if is_bet_event and win_rate > 0.5:
-            return smallblind
+            chips_amount = my_chips * 0.2
         if is_bet_event and win_rate < 0.3:
-            return smallblind
+            chips_amount = my_chips * 0.01
         else:
             if win_rate > 0.9:
-                return bigblind
+                chips_amount = my_chips * 0.4
             elif win_rate > 0.3:
-                return smallblind
+                chips_amount = my_chips * 0.2
             else:
-                return smallblind
-        return smallblind
+                chips_amount = my_chips * 0.1
+        return chips_amount
 

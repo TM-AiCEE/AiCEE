@@ -42,6 +42,7 @@ class Table(object):
         self._winners = []
         self._mine = None
         self._evaluator = HandEvaluator()
+        self.current_amount = 0
 
     def _reset(self):
         self.round_name = ""
@@ -55,21 +56,15 @@ class Table(object):
         self.total_bet = None
         self.init_chips = 0
         self.max_reload_count = 0
-        self._survive_player_num = 0
 
         # customize for statistics
         self._survive_player_num = 0
         self._winners.clear()
+        self.current_amount = 0
 
     def find_player_by_md5(self, md5):
         for player in self.players:
             if player.md5 == md5:
-                return player
-        return None
-
-    def get_bot_by_name(self, name):
-        for player in self.players:
-            if type(player) is Bot and player.name == name:
                 return player
         return None
 
@@ -79,7 +74,7 @@ class Table(object):
             player = Player(md5=md5_name)
             self.players.append(player)
 
-    def bot(self, player):
+    def bot(self):
         return self._mine
 
     def add_player(self, player):
@@ -141,7 +136,7 @@ class Table(object):
             self.total_bet = data.totalBet
 
     def new_round(self):
-        logging.info("========== new round ========")
+        logging.info("========== new round (%s) ========", self.round_count)
 
     def end_round(self):
         # calculate survive players
@@ -193,9 +188,11 @@ class Table(object):
                              self.round_name, player.md5[:5], player.chips, player.allin)
 
         if hasattr(action, "amount"):
+            self.current_amount = action.amount
             logging.info("[%5s] player name: %s, action: %5s, amount:%4s, chips: %5s, total bet: %4d",
                          self.round_name, action.playerName[:5], action.action, action.amount, action.chips, self.total_bet)
         else:
+            self.current_amount = 0
             logging.info("[%5s] player name: %s, action: %5s, amount:%4s, chips: %5s, total bet: %4d",
                          self.round_name, action.playerName[:5], action.action, 0, action.chips, self.total_bet)
 

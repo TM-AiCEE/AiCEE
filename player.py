@@ -170,73 +170,42 @@ class Bot(Player):
 
     def do_actions(self, table, is_bet_event=False):
 
-        # pre-flop strength
+        # pre-flop
         if table.stages_name.index(table.round_name) == table.STAGE.Preflop.value:
             win_prob = HandEvaluator().evaluate_preflop_win_prob(self.cards, len(table.players))
-            thresholds = {"check": 0.1, "call": 0.1, "allin": 0.98, "bet": 0.7, "raise": 0.8, "chipsguard": 0.5}
+            thresholds = {"check": 0.15, "call": 0.15, "allin": 0.98, "bet": 0.6, "raise": 0.8, "chipsguard": 0.7}
 
-        # flop, turn, river strength (using MonteCarlo)
+        # flop, turn, river
         else:
             win_prob = HandEvaluator().evaluate_postflop_win_prob(self.cards, table.board)
-            thresholds = {"check": 0.3, "call": 0.3, "allin": 0.98, "bet": 0.7, "raise": 0.8, "chipsguard": 0.5}
-
-        # chip evaluator based at this round
-        chip_amount = ChipEvaluator(table).evaluate(win_prob, is_bet_event)
-
-        logger.info("[do_actions] after evaluate, the win_prob is %f", win_prob)
-        logger.info("[do_actions] thresholds: allin: %f, raise: %f, call: %f, check: %f",
-                    thresholds["allin"], thresholds["raise"],
-                    thresholds["call"], thresholds["check"])
+            thresholds = {"check": 0.3, "call": 0.3, "allin": 0.98, "bet": 0.6, "raise": 0.8, "chipsguard": 0.7}
 
         # action decision
+        chips = 0
         if is_bet_event:
+            chips = table.current_amount
+
             if win_prob > thresholds["bet"]:
-                action = Player.Actions.FOLD
-                if chip_amount <= self.chips * thresholds["chipsguard"]:
-                    action = Player.Actions.BET
-                    self._take_action("__bet", action, chip_amount)
+                if chips <= self.chips * thresholds["chipsguard"]:
+                    self._take_action("__bet", Player.Actions.BET, chips)
                 else:
-                    action = Player.Actions.CHECK
-                    self._take_action("__action", action)
-
-                logging.info("[do_actions] my actions is (%s), amount (%d)",
-                             super(Bot, self).ACTIONS_CLASS_TO_STRING[action.value], chip_amount)
-
-                # some player all-in rules
-                if table.has_allin():
-                    logging.info("[do_actions] apply allin rules")
-                    if win_prob <= 0.90:
-                        action = Player.Actions.FOLD
-
-                # chips rate rules
-                chips_rate = self.chips / table.total_chips()
-                logging.info("[do_actions] my chips rate is: %f", chips_rate)
-                if chips_rate >= 0.5 and win_prob <= 0.90:
-                    action = Player.Actions.FOLD
-
-                self._take_action("__action", action)
-
-                logging.info("[do_actions] my actions is (%s), amount (%d)",
-                             super(Bot, self).ACTIONS_CLASS_TO_STRING[action.value], chip_amount)
-
-            self._take_action("__action", Player.Actions.FOLD)
-
+                    self._take_action("__action", Player.Actions.CHECK)
         else:
-            action = self._decide_action(win_prob, thresholds)
+            act = self._decide_action(win_prob, thresholds)
 
             # some player all-in rules
             if table.has_allin():
-                logging.info("[do_actions] apply allin rules")
-                if win_prob <= 0.90:
-                    action = Player.Actions.FOLD
+                logging.info("[do_actions] use all-in rules")
+                if win_prob >= 0.90:
+                    act = Player.Actions.ALLIN
 
             # chips rate rules
             chips_rate = self.chips / table.total_chips()
-            logging.info("[do_actions] my chips rate is: %f", chips_rate)
             if chips_rate >= 0.5 and win_prob <= 0.90:
+                logging.info("[do_actions] use chips protected rules")
                 action = Player.Actions.FOLD
 
-            self._take_action("__action", action)
+            self._take_action("__action", act)
 
-            logging.info("[do_actions] my actions is (%s), amount (%d)",
-                         super(Bot, self).ACTIONS_CLASS_TO_STRING[action.value], chip_amount)
+            logging.info("[do_actions] AiCEE's actions is (%s), amount (%d)",
+                         super(Bot, self).ACTIONS_CLASS_TO_STRING[act.value], chips)
