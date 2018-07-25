@@ -1,5 +1,5 @@
 import logging
-import json
+import sys
 import settings
 import hashlib
 import time
@@ -212,7 +212,7 @@ class Table(object):
     def game_over(self):
         self.players.clear()
         self._winners.clear()
-        self._client._reconnect()
+        self._client.reconnect()
 
         reconnect_time = 30
         time.sleep(reconnect_time)
@@ -241,18 +241,15 @@ class Table(object):
 
 class TableManager(metaclass=SingletonMetaclass):
     def __init__(self):
-        self.tables = []
+        self.tables = list()
 
-    def _add_table(self, table):
-        self.tables.append(table)
-
-    def set_table(self, client, number, status):
+    def create(self, client, number=0, status=0):
         table = Table(client, number, status)
-        self._add_table(table)
+        self.tables.append(table)
         return table
 
-    def get_table(self, number):
-        return self.tables[0]
-
     def current(self):
+        if len(self.tables) < 0:
+            raise sys.exit("Creating table object before joining to server is necessary.")
+
         return self.tables[0]
