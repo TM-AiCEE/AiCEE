@@ -95,6 +95,7 @@ class Bot(Player):
         self.bet = info.bet
         self.is_online = info.isOnline
         self.is_human = info.isHuman
+        # __action, request any action
         self.minibet = info.minBet
 
     def join(self):
@@ -183,6 +184,7 @@ class Bot(Player):
             win_prob = HandEvaluator().evaluate_postflop_win_prob(self.cards, table.board)
 
             act = Player.Actions.CHECK
+            chips = 10
             if win_prob < thresholds["bet"]:
                 act = Player.Actions.BET
                 self._take_action("__bet", act, chips)
@@ -205,8 +207,6 @@ class Bot(Player):
         # action decision
         chips = 0
         if is_bet_event:
-            chips = table.current_amount
-
             if win_prob > thresholds["bet"]:
                 if chips <= self.chips * thresholds["chipsguard"]:
                     self._take_action("__bet", Player.Actions.BET, chips)

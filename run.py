@@ -43,7 +43,7 @@ if __name__ == '__main__':
 
     if len(sys.argv) >= 2:
         bot_name = str(sys.argv[1])
-
+        settings.bot_name = bot_name
     else:
         bot_name = settings.bot_name
 
@@ -61,7 +61,7 @@ if __name__ == '__main__':
         bot.join()
 
         table_mgr = TableManager()
-        table_mgr.create(client).add_player(bot)
+        table_mgr.create(client).add_player_by_obj(bot)
     except KeyboardInterrupt:
         client.on_close()
 

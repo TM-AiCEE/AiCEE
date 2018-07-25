@@ -7,42 +7,48 @@ import time
 from singleton import SingletonMetaclass
 from player import Player, Bot
 from operator import attrgetter
-from enum import Enum
-from plugins.treys import Card
 from plugins.evaluation.handevaluator import HandEvaluator
+
+
+class PlayerAction(object):
+    # action: bet, call, raise, check, fold, allin
+    def __init__(self, act, name, amount, chips):
+        self.act = act
+        self.md5 = name
+        self.amount = amount
+        self.chips = chips
+
 
 class Table(object):
 
-    stages_name = ["Deal", "Flop", "Turn", "River"]
-
-    class STAGE(Enum):
-        Preflop = 0
-        Flop = 1
-        Turn = 2
-        River = 3
-
-    def __init__(self, client=None, number=5274, status=0):
-        self._client = client
+    # round name: Deal(pre-flop, flop, turn, river)
+    # small/big blind: playerName, amount
+    # total bet: only update game board information
+    def __init__(self, client, number, status):
         self.number = number
         self.status = status
         self.round_name = ""
-        self.board = []
+        self.board = list()
         self.round_count = 0
         self.raise_count = 0
         self.bet_count = 0
-        self.small_blind = None
-        self.big_blind = None
-        self.players = []
-        self.total_bet = None
+        self.small_blind = dict()
+        self.big_blind = dict()
+        self.players = list()
+
+        self.total_bet = 0
         self.init_chips = 0
         self.max_reload_count = 0
 
-        # customize for statistics
-        self._survive_player_num = 0
-        self._winners = []
-        self._mine = None
+        self._client = client
         self._evaluator = HandEvaluator()
-        self.current_amount = 0
+        self._mine = None
+
+        # customize for statistics
+        self._actions = list()
+        self._winners = list()
+        self._win = False
+        self._current_amount = 0
 
     def _reset(self):
         self.round_name = ""
@@ -50,71 +56,43 @@ class Table(object):
         self.round_count = 0
         self.raise_count = 0
         self.bet_count = 0
-        self.small_blind = None
-        self.big_blind = None
+        self.small_blind.clear()
+        self.big_blind.clear()
         self.players.clear()
-        self.total_bet = None
+        self.total_bet = 0
         self.init_chips = 0
         self.max_reload_count = 0
 
         # customize for statistics
-        self._survive_player_num = 0
         self._winners.clear()
-        self.current_amount = 0
+        self._win = False
+        self._current_amount = 0
+        self._actions.clear()
 
-    def find_player_by_md5(self, md5):
+    def find_player(self, md5):
         for player in self.players:
             if player.md5 == md5:
                 return player
         return None
 
     def add_player_by_md5(self, md5_name):
-        player = self.find_player_by_md5(md5_name)
+        player = self.find_player(md5_name)
         if player is None:
             player = Player(md5=md5_name)
             self.players.append(player)
 
+    def add_player_by_obj(self, player):
+        if type(player) is Bot:
+            self._mine = player
+            self.players.append(player)
+            logging.info("player MD5(%s) joined.", player.md5)
+        else:
+            raise sys.exit("[add_player_by_obj]")
+
     def bot(self):
         return self._mine
 
-    def add_player(self, player):
-        self._mine = player
-        self.players.append(player)
-        logging.info("player (MD5(%s)) joined.", player.md5)
-
-    def update_players(self, players):
-        for pjson in players:
-            player = self.find_player_by_md5(pjson.playerName)
-            if player:
-                cards = None
-
-                if hasattr(pjson, 'cards'):
-                    cards = pjson.cards
-
-                info = Player.PlayerInfo(pjson.playerName,
-                                         pjson.chips,
-                                         pjson.folded,
-                                         pjson.allIn,
-                                         pjson.isSurvive,
-                                         pjson.reloadCount,
-                                         pjson.roundBet,
-                                         pjson.bet,
-                                         cards)
-                # end of round
-                if hasattr(pjson, 'hand'):
-                    info.hand = pjson.hand
-                    info.cards = pjson.hand.cards
-
-                if hasattr(pjson, 'winMoney'):
-                    info.win_money = pjson.winMoney
-                    player.is_online = pjson.isOnline
-
-                # end of round
-
-                player.update(info)
-
     def update_table(self, data):
-        self.board.clear()
         self.board = data.board
         self.round_count = data.roundCount
         self.raise_count = data.raiseCount
@@ -132,19 +110,49 @@ class Table(object):
         if hasattr(data, "status"):
             self.status = data.status
 
+        # update game board information
         if hasattr(data, "totalBet"):
             self.total_bet = data.totalBet
+
+    def update_players(self, players):
+        for pjson in players:
+            player = self.find_player(pjson.playerName)
+            if player:
+                cards = None
+
+                if hasattr(pjson, 'cards'):
+                    cards = pjson.cards
+
+                info = Player.PlayerInfo(pjson.playerName,
+                                         pjson.chips,
+                                         pjson.folded,
+                                         pjson.allIn,
+                                         pjson.isSurvive,
+                                         pjson.reloadCount,
+                                         pjson.roundBet,
+                                         pjson.bet,
+                                         cards)
+                # end of round
+                if hasattr(pjson, 'roundBet'):
+                    info.round_bet = pjson.roundBet
+
+                if hasattr(pjson, 'bet'):
+                    info.bet = pjson.bet
+
+                if hasattr(pjson, 'hand'):
+                    info.hand = pjson.hand
+                    info.cards = pjson.hand.cards
+
+                if hasattr(pjson, 'winMoney'):
+                    info.win_money = pjson.winMoney
+                    player.is_online = pjson.isOnline
+
+                player.update(info)
 
     def new_round(self):
         logging.info("========== new round (%s) ========", self.round_count)
 
     def end_round(self):
-        # calculate survive players
-        total_chips = 0
-        for player in self.players:
-            if player.is_survive:
-                self._survive_player_num += 1
-                total_chips += player.chips
 
         # list players chips rank
         win_money = 0
@@ -162,8 +170,8 @@ class Table(object):
                 card = self._evaluator.print_pretty_cards(player.hand.cards)
                 rank = player.hand.rank
 
-            name = settings.bot_name
-            if player.md5 == hashlib.md5(name.encode('utf-8')).hexdigest():
+            total_chips = self.total_chips()
+            if player.md5 == self.bot().md5:
                 logging.info("[AiCEE] [%2s] player %s, chips %5s (%3f), %s (%16s)(%4d), win_money: %5s",
                              (index+1), player.md5[:5], player.chips, player.chips/total_chips,
                              card, message, rank, win_money)
@@ -179,30 +187,32 @@ class Table(object):
         # clear board cards
         self.board.clear()
 
-    #
-    # __show_action
-    #
-    def update_action(self, action):
+    def update_action(self, json_act):
 
-        for player in self.players:
-            if player.allin and player.is_survive:
-                logging.info("[%5s] player name: %s, chips: %5s, all in: %s",
-                             self.round_name, player.md5[:5], player.chips, player.allin)
+        amount = 0
+        if hasattr(json_act, "amount"):
+            amount = int(json_act.amount)
 
-        if hasattr(action, "amount"):
-            self.current_amount = action.amount
-            logging.info("[%5s] player name: %s, action: %5s, amount:%4s, chips: %5s, total bet: %4d",
-                         self.round_name, action.playerName[:5], action.action, action.amount, action.chips, self.total_bet)
-        else:
-            self.current_amount = 0
-            logging.info("[%5s] player name: %s, action: %5s, amount:%4s, chips: %5s, total bet: %4d",
-                         self.round_name, action.playerName[:5], action.action, 0, action.chips, self.total_bet)
+        act = PlayerAction(json_act.action, json_act.playerName, amount, json_act.chips)
+        self._actions.append(act)
+
+    def show_action(self):
+
+        act = self._actions.pop(0)
+
+        if act.act == "allin":
+            logging.info("[%5s] player name: %s, chips: %5s, amount: %s",
+                         self.round_name, act.md5[:5], act.chips, act.amount)
+
+        logging.info("[%5s] player name: %s, action: %5s, amount:%4s, chips: %5s, total bet: %4d",
+                     self.round_name, act.md5[:5], act.act, act.amount, act.chips, self.total_bet)
 
     def update_winners_info(self, winners):
         for winner in winners:
             self._winners.append(winner)
-            name = settings.bot_name
-            if winner.playerName == hashlib.md5(name.encode('utf-8')).hexdigest():
+
+            if winner.playerName == self.bot().md5:
+                self._win = True
                 logging.info("[AiCEE] The winner is (%s)-(%16s), chips:(%5s)",
                              winner.playerName[:5], winner.hand.message, winner.chips)
             else:
@@ -210,20 +220,21 @@ class Table(object):
                              winner.playerName[:5], winner.hand.message, winner.chips)
 
     def game_over(self):
+
+        md5 = self._mine.md5
+
         self.players.clear()
         self._winners.clear()
         self._client.reconnect()
 
-        reconnect_time = 30
-        time.sleep(reconnect_time)
-        logging.info("[game_over] game over. reconnect server after %s secs.", reconnect_time)
+        if not self._win:
+            reconnect_time = 30
+            time.sleep(reconnect_time)
+            logging.info("[game_over] wait for reconnecting server after %s secs.", reconnect_time)
 
-        player = Bot(self._client, settings.bot_name)
+        player = Bot(self._client, md5)
         player.join()
-        self.players.append(player)
-
-    def get_survive_player_num(self):
-        return self._survive_player_num
+        self.add_player_by_obj(player)
 
     def has_allin(self):
         someone_allin = False

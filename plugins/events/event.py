@@ -17,7 +17,7 @@ def new_peer(message):
 
     for md5 in d:
         if t:
-            player = t.find_player_by_md5(md5)
+            player = t.find_player(md5)
             if player is None:
                 t.add_player_by_md5(md5.playerName)
 
@@ -33,12 +33,13 @@ def new_peer_2(message):
         logger.info("[__new_peer_2] table number is: %s", t.number)
 
     for pjson in d.players:
-        player = t.find_player_by_md5(pjson.playerName)
+        player = t.find_player(pjson.playerName)
         if player:
             player.is_online = pjson.isOnline
         else:
             player = Player(pjson.playerName)
             player.is_online = pjson.isOnline
+            logger.info("[__new_peer_2] player name is: %s, is_online: %s", player.md5[:5], player.is_online)
 
 
 @receive_from("__new_round")
@@ -67,11 +68,11 @@ def handle_action_requests(message):
     d = message.data
     t = table_mgr.current()
 
-    if t and t.number == int(d.tableNumber):
+    if t:
         t.update_table(d.game)
         t.update_players(d.game.players)
 
-        player = t.find_player_by_md5(hashlib.md5(settings.bot_name.encode('utf-8')).hexdigest())
+        player = t.bot()
         if player:
             player.update_self(d.self)
             player.do_actions(t)
@@ -81,15 +82,15 @@ def handle_action_requests(message):
 def request_bet(message):
     d = message.data
     t = table_mgr.current()
-    is_bet_event = True
+
     if t:
         t.update_table(d.game)
         t.update_players(d.game.players)
 
-        player = t.find_player_by_md5(hashlib.md5(settings.bot_name.encode('utf-8')).hexdigest())
+        player = t.bot()
         if player:
             player.update_self(d.self)
-            player.do_actions(t, is_bet_event)
+            player.do_actions(t, True)
 
 
 @receive_from("__show_action")
@@ -101,12 +102,14 @@ def update_board_info(message):
         t.update_table(d.table)
         t.update_players(d.players)
         t.update_action(d.action)
+        t.show_action()
 
 
 @receive_from("__round_end")
 def end_round(message):
     d = message.data
     t = table_mgr.current()
+
     if t:
         t.update_table(d.table)
         t.update_players(d.players)
