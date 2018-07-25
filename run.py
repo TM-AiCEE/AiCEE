@@ -1,6 +1,7 @@
 import logging
 import sys
-
+import datetime
+import os
 import settings
 
 from player import Bot
@@ -16,6 +17,11 @@ kw = {
 }
 
 logging.basicConfig(**kw)
+
+log_filename = datetime.datetime.now().strftime('%Y-%m-%d') + '-bot.log'
+fh = logging.FileHandler(filename=os.path.join(log_filename), mode='w', encoding='utf-8')
+fh.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
+logging.getLogger().addHandler(fh)
 
 
 def receive_from(name, flags=0):

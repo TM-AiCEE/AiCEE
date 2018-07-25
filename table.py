@@ -172,9 +172,11 @@ class Table(object):
                              (index+1), player.md5[:5], player.chips, player.chips/total_chips,
                              card, message, rank, win_money)
 
+        # clear cards for each player
         for player in self.players:
             player.cards.clear()
 
+        # clear board cards
         self.board.clear()
 
     #
