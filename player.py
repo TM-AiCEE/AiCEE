@@ -5,9 +5,18 @@ import hashlib
 
 from enum import Enum
 from plugins.evaluation.handevaluator import HandEvaluator
-from plugins.evaluation.chipevaluator import ChipEvaluator
+
 
 logger = logging.getLogger(__name__)
+
+
+class PlayerAction(object):
+    # action: bet, call, raise, check, fold, allin
+    def __init__(self, act, name, amount, chips):
+        self.act = act
+        self.md5 = name
+        self.amount = amount
+        self.chips = chips
 
 
 class Player(object):
@@ -30,8 +39,7 @@ class Player(object):
         ALLIN = 5
 
     class PlayerInfo(object):
-        def __init__(self, md5, chips, folded, allin, is_survive, reload_count, round_bet, bet, cards=[],
-                     is_online=False):
+        def __init__(self, md5, chips, folded, allin, is_survive, reload_count, round_bet, bet, cards=[]):
             self.md5 = md5
             self.chips = chips
             self.folded = folded
@@ -55,6 +63,8 @@ class Player(object):
         self.cards = []
         self.is_online = False
         self.is_human = False
+        self.hand = None
+        self.win_money = 0
 
     def update(self, player_info):
         self.md5 = player_info.md5
@@ -107,10 +117,13 @@ class Bot(Player):
             }
         }))
 
-    def _take_action(self, event_name, action, amount=0):
+    def _take_action(self, action, amount=0):
+
+        logging.info("[do_actions] AiCEE's actions is (%s), amount (%d)",
+                     super(Bot, self).ACTIONS_CLASS_TO_STRING[action.value], amount)
 
         # If the action is 'bet', the message must include an 'amount'
-        if event_name == "__bet":
+        if Player.Actions.BET == action:
             self.client.send(json.dumps({
                 "eventName": "__action",
                 "data": {
@@ -156,7 +169,8 @@ class Bot(Player):
                     }
                 }))
 
-    def _decide_action(self, win_prob, thresholds):
+    @staticmethod
+    def _decide_action(win_prob, thresholds):
 
         if win_prob >= thresholds["allin"]:
             return Player.Actions.ALLIN
@@ -170,64 +184,72 @@ class Bot(Player):
             return Player.Actions.FOLD
 
     def do_actions(self, table, is_bet_event=False):
+        t = table
 
         # pre-flop
         if table.round_name == "Deal":
             win_prob = HandEvaluator().evaluate_preflop_win_prob(self.cards, len(table.players))
             thresholds = {"check": 0.15, "call": 0.15, "allin": 0.98, "bet": 0.6, "raise": 0.8, "chipsguard": 0.7}
 
-        # flop, three cards on board
-        elif table.round_name == "Flop":
+            act = self._decide_action(win_prob, thresholds)
+            self._take_action(act)
 
+        # flop, turn, river
+        else:
+            win_prob = HandEvaluator().evaluate_postflop_win_prob(self.cards, table.board)
             thresholds = {"check": 0.15, "call": 0.15, "allin": 0.98, "bet": 0.4, "raise": 0.8, "chipsguard": 0.7}
 
-            win_prob = HandEvaluator().evaluate_postflop_win_prob(self.cards, table.board)
+            # round count rules
+            if t.round_count > 20:
+                thresholds = {"check": 0.15, "call": 0.15, "allin": 0.8, "bet": 0.3, "raise": 0.5, "chipsguard": 0.5}
+                logger.info("[do_actions] use round count > 20 rule.")
 
-            act = Player.Actions.CHECK
-            chips = 10
-            if win_prob < thresholds["bet"]:
-                act = Player.Actions.BET
-                self._take_action("__bet", act, chips)
-            else:
-                self._take_action("__action", act)
-
-            logging.info("[do_actions] AiCEE's actions is (%s), amount (%d)",
-                         super(Bot, self).ACTIONS_CLASS_TO_STRING[act.value], chips)
-            return
-
-        elif table.round_name == "Turn":
-            win_prob = HandEvaluator().evaluate_postflop_win_prob(self.cards, table.board)
-            thresholds = {"check": 0.3, "call": 0.3, "allin": 0.98, "bet": 0.6, "raise": 0.8, "chipsguard": 0.7}
-            
-        # turn, river
-        else:
-            win_prob = HandEvaluator().evaluate_postflop_win_prob(self.cards, table.board)
-            thresholds = {"check": 0.3, "call": 0.3, "allin": 0.98, "bet": 0.6, "raise": 0.8, "chipsguard": 0.7}
-
-        # action decision
-        chips = 0
-        if is_bet_event:
-            if win_prob > thresholds["bet"]:
-                if chips <= self.chips * thresholds["chipsguard"]:
-                    self._take_action("__bet", Player.Actions.BET, chips)
-                else:
-                    self._take_action("__action", Player.Actions.CHECK)
-        else:
+            # default action based on thresholds
             act = self._decide_action(win_prob, thresholds)
 
-            # some player all-in rules
-            if table.has_allin():
-                logging.info("[do_actions] use all-in rules")
-                if win_prob >= 0.90:
-                    act = Player.Actions.ALLIN
+            # chips guard rule
+            chips = self.chips * win_prob
+            if chips >= self.chips * thresholds["chipsguard"]:
+                chips = self.chips * thresholds["chipsguard"]
+                logger.info("[do_actions] use chips guard rule.")
 
-            # chips rate rules
-            chips_rate = self.chips / table.total_chips()
-            if chips_rate >= 0.5 and win_prob <= 0.90:
-                logging.info("[do_actions] use chips protected rules")
-                action = Player.Actions.FOLD
+            # avoid other players all-in rule
+            last_action = t.player_actions.pop(0)
 
-            self._take_action("__action", act)
+            if last_action.md5 is not self.md5:
+                player = t.find_player(last_action.md5)
+                if player and not player.allin:
+                    other_player_chips_risk = last_action.amount/last_action.chips
+                    if win_prob < 0.6:
+                        if other_player_chips_risk > 0.6:
+                            act = Player.Actions.FOLD
+                            logger.info("[do_actions] use avoid other player has higher win rate.")
 
-            logging.info("[do_actions] aicee's actions is (%s), amount (%d)",
-                         super(Bot, self).ACTIONS_CLASS_TO_STRING[act.value], chips)
+            # avoid other players all-in rule
+            if t.other_players_allin() and last_action.amount > self.chips * thresholds["chipsguard"]:
+                if win_prob <= 0.7:
+                    act = Player.Actions.FOLD
+                    logger.info("[do_actions] use avoid other players all-in rule.")
+
+            # rank protected rule
+            chips_rate = self.chips / t.total_chips()
+            if chips_rate > 0.3 and win_prob <= 0.7:
+                act = Player.Actions.FOLD
+                logger.info("[do_actions] use rank protected rule.")
+
+            # Big-blind rule, check first if you're big-blind player.
+            if t.is_big_blind_player():
+                if last_action.amount <= self.chips * 0.1:
+                    act = Player.Actions.CHECK
+                    logger.info("[do_actions] use Big-blind rule.")
+
+            # handle bet event
+            if is_bet_event:
+                act = Player.Actions.BET if win_prob < thresholds["bet"] else Player.Actions.CHECK
+                self._take_action(act, chips)
+                logger.info("[do_actions] handle bet event.")
+                return
+
+            self._take_action(act, chips)
+
+

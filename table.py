@@ -1,22 +1,13 @@
 import logging
 import sys
-import settings
-import hashlib
+import json
 import time
+import random
 
 from singleton import SingletonMetaclass
-from player import Player, Bot
+from player import Player, PlayerAction, Bot
 from operator import attrgetter
 from plugins.evaluation.handevaluator import HandEvaluator
-
-
-class PlayerAction(object):
-    # action: bet, call, raise, check, fold, allin
-    def __init__(self, act, name, amount, chips):
-        self.act = act
-        self.md5 = name
-        self.amount = amount
-        self.chips = chips
 
 
 class Table(object):
@@ -45,10 +36,13 @@ class Table(object):
         self._mine = None
 
         # customize for statistics
-        self._actions = list()
+        self.player_actions = list()
         self._winners = list()
         self._win = False
         self._current_amount = 0
+        self._total_count = 0
+        self._win_count = 0
+        self._chips = 0
 
     def _reset(self):
         self.round_name = ""
@@ -67,7 +61,7 @@ class Table(object):
         self._winners.clear()
         self._win = False
         self._current_amount = 0
-        self._actions.clear()
+        self.player_actions.clear()
 
     def find_player(self, md5):
         for player in self.players:
@@ -165,7 +159,7 @@ class Table(object):
                 win_money = player.win_money
 
             # end of round
-            if hasattr(player, 'hand'):
+            if hasattr(player, 'hand') and hasattr(player.hand, 'message'):
                 message = player.hand.message
                 card = self._evaluator.print_pretty_cards(player.hand.cards)
                 rank = player.hand.rank
@@ -193,12 +187,14 @@ class Table(object):
         if hasattr(json_act, "amount"):
             amount = int(json_act.amount)
 
+        self.player_actions.clear()
+
         act = PlayerAction(json_act.action, json_act.playerName, amount, json_act.chips)
-        self._actions.append(act)
+        self.player_actions.append(act)
 
     def show_action(self):
 
-        act = self._actions.pop(0)
+        act = self.player_actions[0]
 
         if act.act == "allin":
             logging.info("[%5s] player name: %s, chips: %5s, amount: %s",
@@ -213,30 +209,44 @@ class Table(object):
 
             if winner.playerName == self.bot().md5:
                 self._win = True
+                self._win_count += 1
+                self._chips += winner.chips
                 logging.info("[AiCEE] The winner is (%s)-(%16s), chips:(%5s)",
                              winner.playerName[:5], winner.hand.message, winner.chips)
             else:
                 logging.info("[OTHER] The winner is (%s)-(%16s), chips:(%5s)",
                              winner.playerName[:5], winner.hand.message, winner.chips)
 
+    def summarize(self):
+        logging.info("[summaries] total played: %s, win rate: %s, chips: %s",
+                     self._total_count,
+                     self._win_count / self._total_count,
+                     self._chips)
+
+        summarize = dict()
+        summarize['total_count'] = self._total_count
+        summarize['win_rate'] = self._win_count / self._total_count
+        summarize['chips'] = self._chips
+
+        with open('summaries.json', 'w') as outfile:
+            json.dump(summarize, outfile)
+
     def game_over(self):
 
-        md5 = self._mine.md5
-
-        self.players.clear()
+        self._total_count += 1
         self._winners.clear()
-        self._client.reconnect()
+
+        player = self.players.pop(0)
+        player.join()
+        self.players.clear()
+        self.summarize()
 
         if not self._win:
-            reconnect_time = 30
-            time.sleep(reconnect_time)
+            reconnect_time = random.randrange(30, 60)
             logging.info("[game_over] wait for reconnecting server after %s secs.", reconnect_time)
+            time.sleep(reconnect_time)
 
-        player = Bot(self._client, md5)
-        player.join()
-        self.add_player_by_obj(player)
-
-    def has_allin(self):
+    def other_players_allin(self):
         someone_allin = False
         for player in self.players:
             if player.allin and player.is_survive:
@@ -248,6 +258,9 @@ class Table(object):
         for player in self.players:
             total_chips += player.chips
         return total_chips
+
+    def is_big_blind_player(self):
+        return self.big_blind.playerName == self._mine.md5
 
 
 class TableManager(metaclass=SingletonMetaclass):

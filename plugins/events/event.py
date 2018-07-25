@@ -1,19 +1,17 @@
 import logging
-
-from run import receive_from
-from player import Player, Bot
-from table import TableManager
-import hashlib
 import settings
 
+from run import receive_from
+from player import Player
+from table import TableManager
+
 logger = logging.getLogger(__name__)
-table_mgr = TableManager()
 
 
 @receive_from("__new_peer")
 def new_peer(message):
     d = message.data
-    t = table_mgr.current()
+    t = TableManager().current()
 
     for md5 in d:
         if t:
@@ -25,12 +23,14 @@ def new_peer(message):
 @receive_from("__new_peer_2")
 def new_peer_2(message):
     d = message.data
-    t = table_mgr.current()
+    t = TableManager().current()
 
     if t:
         t.number = d.tableNumber
         t.status = d.tableStatus
         logger.info("[__new_peer_2] table number is: %s", t.number)
+        if settings.TRAINING_MODE:
+            logger.info("[__new_peer_2] http://poker-training.vtr.trendnet.org:3001/game.html?table=%s", t.number)
 
     for pjson in d.players:
         player = t.find_player(pjson.playerName)
@@ -45,7 +45,7 @@ def new_peer_2(message):
 @receive_from("__new_round")
 def start_of_new_round(message):
     d = message.data
-    t = table_mgr.current()
+    t = TableManager().current()
 
     if t:
         t.new_round()
@@ -56,7 +56,7 @@ def start_of_new_round(message):
 @receive_from("__deal")
 def deal(message):
     d = message.data
-    t = table_mgr.current()
+    t = TableManager().current()
 
     if t:
         t.update_table(d.table)
@@ -66,7 +66,7 @@ def deal(message):
 @receive_from("__action")
 def handle_action_requests(message):
     d = message.data
-    t = table_mgr.current()
+    t = TableManager().current()
 
     if t:
         t.update_table(d.game)
@@ -81,7 +81,7 @@ def handle_action_requests(message):
 @receive_from("__bet")
 def request_bet(message):
     d = message.data
-    t = table_mgr.current()
+    t = TableManager().current()
 
     if t:
         t.update_table(d.game)
@@ -96,7 +96,7 @@ def request_bet(message):
 @receive_from("__show_action")
 def update_board_info(message):
     d = message.data
-    t = table_mgr.current()
+    t = TableManager().current()
 
     if t:
         t.update_table(d.table)
@@ -108,7 +108,7 @@ def update_board_info(message):
 @receive_from("__round_end")
 def end_round(message):
     d = message.data
-    t = table_mgr.current()
+    t = TableManager().current()
 
     if t:
         t.update_table(d.table)
@@ -119,7 +119,7 @@ def end_round(message):
 @receive_from("__game_over")
 def game_over(message):
     d = message.data
-    t = table_mgr.current()
+    t = TableManager().current()
 
     if t:
         t.update_players(d.players)

@@ -18,6 +18,7 @@ class MessageDispatcher(object):
         self.events = events
 
     def dispatch_msg(self, msg):
+        # logging.debug(json.dumps(msg, indent=4, sort_keys=True))
         json_msg = json.dumps(msg, ensure_ascii=False)
         data = JsonDecryptor().to_object(json_msg)
         for key, value in self.events.items():

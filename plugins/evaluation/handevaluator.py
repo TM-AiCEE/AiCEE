@@ -71,6 +71,8 @@ class HandEvaluator(object):
         for i in range(n):
             hand = pd.draw(2)
             sim_rank = evaluator.evaluate(hand, boards)
+            if sim_rank is None:
+                continue
             win_prob = 1.0 - evaluator.get_five_card_rank_percentage(sim_rank)
             total_win_prob += win_prob
         sim_win_prob = total_win_prob / n

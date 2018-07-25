@@ -69,7 +69,7 @@ class Evaluator(object):
         for combo in all5cardcombobs:
 
             score = self._five(combo)
-            if score < minimum:
+            if score is not None and score < minimum:
                 minimum = score
 
         return minimum
