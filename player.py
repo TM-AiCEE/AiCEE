@@ -5,9 +5,18 @@ import hashlib
 
 from enum import Enum
 from plugins.evaluation.handevaluator import HandEvaluator
-from plugins.evaluation.chipevaluator import ChipEvaluator
+
 
 logger = logging.getLogger(__name__)
+
+
+class PlayerAction(object):
+    # action: bet, call, raise, check, fold, allin
+    def __init__(self, act, name, amount, chips):
+        self.act = act
+        self.md5 = name
+        self.amount = amount
+        self.chips = chips
 
 
 class Player(object):
@@ -229,5 +238,5 @@ class Bot(Player):
 
             self._take_action("__action", act)
 
-            logging.info("[do_actions] aicee's actions is (%s), amount (%d)",
+            logging.info("[do_actions] AiCEE's actions is (%s), amount (%d)",
                          super(Bot, self).ACTIONS_CLASS_TO_STRING[act.value], chips)

@@ -1,22 +1,10 @@
 import logging
 import sys
-import settings
-import hashlib
-import time
 
 from singleton import SingletonMetaclass
-from player import Player, Bot
+from player import Player, PlayerAction, Bot
 from operator import attrgetter
 from plugins.evaluation.handevaluator import HandEvaluator
-
-
-class PlayerAction(object):
-    # action: bet, call, raise, check, fold, allin
-    def __init__(self, act, name, amount, chips):
-        self.act = act
-        self.md5 = name
-        self.amount = amount
-        self.chips = chips
 
 
 class Table(object):
@@ -227,14 +215,15 @@ class Table(object):
         self._winners.clear()
         self._client.reconnect()
 
-        if not self._win:
-            reconnect_time = 30
-            time.sleep(reconnect_time)
-            logging.info("[game_over] wait for reconnecting server after %s secs.", reconnect_time)
+        # if not self._win:
+        #    reconnect_time = 30
+        #    time.sleep(reconnect_time)
+        #    self._client.reconnect()
+        #    logging.info("[game_over] wait for reconnecting server after %s secs.", reconnect_time)
 
-        player = Bot(self._client, md5)
-        player.join()
-        self.add_player_by_obj(player)
+        # player = Bot(self._client, md5)
+        # player.join()
+        # self.add_player_by_obj(player)
 
     def has_allin(self):
         someone_allin = False

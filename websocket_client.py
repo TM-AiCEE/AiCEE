@@ -24,10 +24,10 @@ class WebSocketClient(object):
         logging.info("connecting to %s", self.url)
         self.ws = create_connection(self.url)
         if self.ws.status == HTTPStatus.SWITCHING_PROTOCOLS:
-            logging.info("%s, status %s", HTTPStatus.SWITCHING_PROTOCOLS.description, self.ws.status)
+            logging.info("[TexasPokerClient] %s, status %s", HTTPStatus.SWITCHING_PROTOCOLS.description, self.ws.status)
             self.is_connect = True
         else:
-            logging.info("connect failed: %s", self.ws.status)
+            logging.info("[TexasPokerClient] connect failed: %s", self.ws.status)
 
     def reconnect(self):
         if self.is_connect:
@@ -39,7 +39,7 @@ class WebSocketClient(object):
             if self.ws:
                 self.ws.close()
         except WebSocketConnectionClosedException as e:
-            logging.debug("disconnect from server.")
+            logging.debug("[TexasPokerClient] disconnect from server.")
 
         self.on_close()
 
@@ -73,19 +73,20 @@ class TexasPokerClient(WebSocketClient):
         self._events.init_event()
 
     def on_message(self, msg):
-        # logging.debug(json.dumps(msg, indent=4, sort_keys=True))
         self._dispatcher.dispatch_msg(msg)
 
     def on_close(self):
-        logging.info("-- Goodbye! --")
+        if self.is_connect:
+            logging.info("[TexasPokerClient] -- Goodbye! --")
 
     def send(self, message):
         while True:
-            if self.is_connect is True:
+            if self.is_connect:
                 self.ws.send(message)
                 break
 
     def on_error(self, e):
-        logging.info("on_error")
-        self.reconnect()
+        if self.is_connect:
+            logging.info("[TexasPokerClient] on_error")
+
 
