@@ -171,11 +171,33 @@ class Bot(Player):
     def do_actions(self, table, is_bet_event=False):
 
         # pre-flop
-        if table.stages_name.index(table.round_name) == table.STAGE.Preflop.value:
+        if table.round_name == "Deal":
             win_prob = HandEvaluator().evaluate_preflop_win_prob(self.cards, len(table.players))
             thresholds = {"check": 0.15, "call": 0.15, "allin": 0.98, "bet": 0.6, "raise": 0.8, "chipsguard": 0.7}
 
-        # flop, turn, river
+        # flop, three cards on board
+        elif table.round_name == "Flop":
+
+            thresholds = {"check": 0.15, "call": 0.15, "allin": 0.98, "bet": 0.4, "raise": 0.8, "chipsguard": 0.7}
+
+            win_prob = HandEvaluator().evaluate_postflop_win_prob(self.cards, table.board)
+
+            act = Player.Actions.CHECK
+            if win_prob < thresholds["bet"]:
+                act = Player.Actions.BET
+                self._take_action("__bet", act, chips)
+            else:
+                self._take_action("__action", act)
+
+            logging.info("[do_actions] AiCEE's actions is (%s), amount (%d)",
+                         super(Bot, self).ACTIONS_CLASS_TO_STRING[act.value], chips)
+            return
+
+        elif table.round_name == "Turn":
+            win_prob = HandEvaluator().evaluate_postflop_win_prob(self.cards, table.board)
+            thresholds = {"check": 0.3, "call": 0.3, "allin": 0.98, "bet": 0.6, "raise": 0.8, "chipsguard": 0.7}
+            
+        # turn, river
         else:
             win_prob = HandEvaluator().evaluate_postflop_win_prob(self.cards, table.board)
             thresholds = {"check": 0.3, "call": 0.3, "allin": 0.98, "bet": 0.6, "raise": 0.8, "chipsguard": 0.7}
@@ -207,5 +229,5 @@ class Bot(Player):
 
             self._take_action("__action", act)
 
-            logging.info("[do_actions] AiCEE's actions is (%s), amount (%d)",
+            logging.info("[do_actions] aicee's actions is (%s), amount (%d)",
                          super(Bot, self).ACTIONS_CLASS_TO_STRING[act.value], chips)
