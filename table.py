@@ -22,7 +22,7 @@ class Table(object):
         River = 3
 
     def __init__(self, client=None, number=5274, status=0):
-        self.client = client
+        self._client = client
         self.number = number
         self.status = status
         self.round_name = ""
@@ -212,8 +212,13 @@ class Table(object):
     def game_over(self):
         self.players.clear()
         self._winners.clear()
-        time.sleep(30)
-        player = Bot(self.client, settings.bot_name)
+        self._client._reconnect()
+
+        reconnect_time = 30
+        time.sleep(reconnect_time)
+        logging.info("[game_over] game over. reconnect server after %s secs.", reconnect_time)
+
+        player = Bot(self._client, settings.bot_name)
         player.join()
         self.players.append(player)
 

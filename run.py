@@ -18,7 +18,11 @@ kw = {
 
 logging.basicConfig(**kw)
 
-log_filename = datetime.datetime.now().strftime('%Y-%m-%d') + '-bot.log'
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__)) + '\\logs\\'
+if not os.path.exists(ROOT_DIR):
+    os.mkdir(ROOT_DIR)
+
+log_filename = ROOT_DIR + datetime.datetime.now().strftime('%Y-%m-%d-%H-%M') + '-bot.log'
 fh = logging.FileHandler(filename=os.path.join(log_filename), mode='w', encoding='utf-8')
 fh.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
 logging.getLogger().addHandler(fh)
@@ -36,11 +40,14 @@ def receive_from(name, flags=0):
 if __name__ == '__main__':
 
     bot_name = ""
+
     if len(sys.argv) >= 2:
         bot_name = str(sys.argv[1])
 
     else:
         bot_name = settings.bot_name
+
+    logging.info("save logs in %s", log_filename)
 
     if settings.TRAINING_MODE:
         client = TexasPokerClient(settings.TRAINING_SERVER_URL)

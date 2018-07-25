@@ -31,7 +31,6 @@ class WebSocketClient(object):
 
     def _reconnect(self):
         if self.is_connect:
-            time.sleep(30)
             self._disconnect()
             self.start()
 

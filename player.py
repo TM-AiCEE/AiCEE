@@ -98,7 +98,7 @@ class Bot(Player):
         self.minibet = info.minBet
 
     def join(self):
-        logging.info("player name: %s(MD5(%s)) is going to join.", self.name, self.md5)
+        logging.info("player name: %s(%s) is going to join.", self.name, self.md5)
         self.client.send(json.dumps({
             "eventName": "__join",
             "data": {
