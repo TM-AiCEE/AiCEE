@@ -237,7 +237,6 @@ class Table(object):
         self._winners.clear()
 
         player = self.players.pop(0)
-        player.join()
         self.players.clear()
         self.summarize()
 
@@ -245,6 +244,8 @@ class Table(object):
             reconnect_time = random.randrange(30, 60)
             logging.info("[game_over] wait for reconnecting server after %s secs.", reconnect_time)
             time.sleep(reconnect_time)
+
+        player.join()
 
     def other_players_allin(self):
         someone_allin = False
