@@ -246,6 +246,7 @@ class Table(object):
             time.sleep(reconnect_time)
 
         player.join()
+        self.players.append(player)
 
     def other_players_allin(self):
         someone_allin = False
