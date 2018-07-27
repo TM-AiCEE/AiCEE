@@ -46,7 +46,7 @@ class Table(object):
         self._total_count = 0
         self._win_count = 0
         self._chips = 0
-        self._player_games = 0
+        self._player_games = 1
 
     def _reset(self):
         self.round_name = ""
@@ -283,6 +283,13 @@ class Table(object):
 
     def is_big_blind_player(self):
         return self.big_blind.playerName == self._mine.md5
+
+    def number_player(self):
+        num = 0
+        for player in self.players:
+            if player.is_survive:
+                num += 1
+        return num
 
 
 class TableManager(metaclass=SingletonMetaclass):
