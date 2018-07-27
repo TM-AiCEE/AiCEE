@@ -3,6 +3,8 @@ import sys
 import json
 import time
 import random
+import os
+import datetime
 
 from singleton import SingletonMetaclass
 from player import Player, PlayerAction, Bot
@@ -222,14 +224,7 @@ class Table(object):
                      self._total_count,
                      self._win_count / self._total_count,
                      self._chips)
-
-        summarize = dict()
-        summarize['total_count'] = self._total_count
-        summarize['win_rate'] = self._win_count / self._total_count
-        summarize['chips'] = self._chips
-
-        with open('summaries.json', 'w') as outfile:
-            json.dump(summarize, outfile)
+        self._save_summarize()
 
     def game_over(self):
 
@@ -247,6 +242,25 @@ class Table(object):
 
         player.join()
         self.players.append(player)
+
+    def _load_summarize(self, file):
+        with open(file) as f:
+            data = json.load(f)
+
+        self._total_count = data['total_count']
+
+    def _save_summarize(self):
+        log_dic = os.path.dirname(os.path.abspath(__file__)) + '\\logs\\'
+        filename = log_dic + datetime.datetime.now().strftime('%Y-%m-%d-%H-%M') + '-summaries.json'
+        summarize = dict()
+        summarize['time'] = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M')
+        summarize['table_number'] = self.number
+        summarize['total_count'] = self._total_count
+        summarize['win_rate'] = self._win_count / self._total_count
+        summarize['chips'] = self._chips
+
+        with open(filename, 'w+') as outfile:
+            json.dump(summarize, outfile)
 
     def other_players_allin(self):
         someone_allin = False
