@@ -5,6 +5,7 @@ import time
 import random
 import os
 import datetime
+import settings
 
 from singleton import SingletonMetaclass
 from player import Player, PlayerAction, Bot
@@ -45,6 +46,7 @@ class Table(object):
         self._total_count = 0
         self._win_count = 0
         self._chips = 0
+        self._player_games = 0
 
     def _reset(self):
         self.round_name = ""
@@ -240,8 +242,12 @@ class Table(object):
             logging.info("[game_over] wait for reconnecting server after %s secs.", reconnect_time)
             time.sleep(reconnect_time)
 
-        player.join()
-        self.players.append(player)
+        if self._player_games < settings.MAX_GAMES:
+            player.join()
+            self.players.append(player)
+            logging.info("[game_over] auto-join game. (%s/%s).", self._player_games, settings.MAX_GAMES)
+        else:
+            logging.info("[game_over] already played %s games. won't join new game", self._player_games)
 
     def _load_summarize(self, file):
         with open(file) as f:
