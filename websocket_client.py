@@ -1,5 +1,6 @@
 import logging
 import json
+import sys
 import time
 
 from threading import Thread
@@ -19,9 +20,10 @@ class WebSocketClient(object):
         self.is_connect = False
         self._events = EventManager()
         self._dispatcher = MessageDispatcher(self._events.get_events())
+        self.reconnect_count = 0
 
     def _connect(self):
-        logging.info("connecting to %s", self.url)
+        logging.info("[TexasPokerClient] connecting to %s", self.url)
         self.ws = create_connection(self.url)
         if self.ws.status == HTTPStatus.SWITCHING_PROTOCOLS:
             logging.info("[TexasPokerClient] %s, status %s", HTTPStatus.SWITCHING_PROTOCOLS.description, self.ws.status)
@@ -86,7 +88,11 @@ class TexasPokerClient(WebSocketClient):
                 break
 
     def on_error(self, e):
-        if self.is_connect:
-            logging.info("[TexasPokerClient] on_error")
+        logging.info("[TexasPokerClient] on_error: %s", e)
+        logging.info("[TexasPokerClient] on_error, wait for 5 secs, reconnect to server...")
+        self.reconnect_count += 1
+        time.sleep(5)
+        if self.reconnect_count > 10:
+            raise sys.exit(0)
 
 
