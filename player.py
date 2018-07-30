@@ -210,7 +210,7 @@ class Bot(Player):
                     logger.info("[do_actions] use avoid other player has higher win rate.")
 
                 if player and not player.allin:
-                    other_player_chips_risk = last_action.amount / last_action.chips
+                    other_player_chips_risk = 0 if last_action.chips == 0 else last_action.amount / last_action.chips
                     if win_prob < 0.6:
                         if other_player_chips_risk > 0.6:
                             act = Player.Actions.FOLD
