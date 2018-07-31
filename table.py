@@ -6,6 +6,7 @@ import random
 import os
 import datetime
 import settings
+import utils
 
 from singleton import SingletonMetaclass
 from player import Player, PlayerAction, Bot
@@ -232,9 +233,6 @@ class Table(object):
 
         self._total_count += 1
         self._winners.clear()
-
-        player = self.players.pop(0)
-        #self.players.clear()
         self.summarize()
 
         if not self._win:
@@ -243,9 +241,8 @@ class Table(object):
             time.sleep(reconnect_time)
 
         if self._player_games < settings.MAX_GAMES:
-            player.join()
-            self.players.append(player)
             logging.info("[game_over] auto-join game. (%s/%s).", self._player_games, settings.MAX_GAMES)
+            utils.restart_program()
         else:
             logging.info("[game_over] already played %s games. won't join new game", self._player_games)
 

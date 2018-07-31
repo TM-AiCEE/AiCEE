@@ -22,6 +22,7 @@ ROOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
 if not os.path.exists(ROOT_DIR):
     os.mkdir(ROOT_DIR)
 
+# TODO: generate Y-m-d-H-table-number-players.log
 log_filename = os.path.join(ROOT_DIR, datetime.datetime.now().strftime('%Y-%m-%d-%H-%M') + '-bot.log')
 fh = logging.FileHandler(filename=os.path.join(log_filename), mode='w', encoding='utf-8')
 fh.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)

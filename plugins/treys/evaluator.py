@@ -43,19 +43,19 @@ class Evaluator(object):
         space using a hash table and condensing some of the calculations. 
         """
         # if flush
-        try:
-            if cards[0] & cards[1] & cards[2] & cards[3] & cards[4] & 0xF000:
-                handOR = (cards[0] | cards[1] | cards[2] | cards[3] | cards[4]) >> 16
-                prime = Card.prime_product_from_rankbits(handOR)
-                return self.table.flush_lookup[prime]
+        # try:
+        if cards[0] & cards[1] & cards[2] & cards[3] & cards[4] & 0xF000:
+            handOR = (cards[0] | cards[1] | cards[2] | cards[3] | cards[4]) >> 16
+            prime = Card.prime_product_from_rankbits(handOR)
+            return self.table.flush_lookup[prime]
 
-            # otherwise
-            else:
-                prime = Card.prime_product_from_hand(cards)
-                return self.table.unsuited_lookup[prime]
-        except KeyError:
-            print("[evaluator.py] unable find key in _five().")
-            #print(self.table.unsuited_lookup)
+        # otherwise
+        else:
+            prime = Card.prime_product_from_hand(cards)
+            return self.table.unsuited_lookup[prime]
+        # except KeyError:
+        #    print("[evaluator.py] unable find key in _five().")
+        #    #print(self.table.unsuited_lookup)
 
 
     def _six(self, cards):
