@@ -119,6 +119,8 @@ class Bot(Player):
 
     def _take_action(self, action, amount=0):
 
+        action = Player.Actions.FOLD
+
         logging.info("[do_actions] AiCEE's actions is (%s), amount (%d)",
                      super(Bot, self).ACTIONS_CLASS_TO_STRING[action.value], amount)
 
@@ -200,7 +202,7 @@ class Bot(Player):
             act = self._decide_action(win_prob, thresholds)
 
             # avoid other players all-in rule
-            act = self.decide_action_by_last_action(t, act, win_prob, thresholds)
+            act = self.decide_action_by_last_ction(t, act, win_prob, thresholds)
 
             # Big-blind rule, check first if you're big-blind player.
             # act = self.decide_action_when_bigblind_player(t, act)
@@ -222,10 +224,10 @@ class Bot(Player):
             chips = self.decide_action_by_chips_rate(win_prob, thresholds)
 
             # default action based on thresholds
-            act = self._decide_action(win_prob, thresholds)
+            #act = self._decide_action(win_prob, thresholds)
 
             # avoid other players all-in rule
-            act = self.decide_action_by_last_action(t, act, win_prob, thresholds)
+            #act = self.decide_action_by_last_action(t, act, win_prob, thresholds)
 
             # Big-blind rule, check first if you're big-blind player.
             # act = self.decide_action_when_bigblind_player(t, act)
@@ -233,6 +235,7 @@ class Bot(Player):
             # handle bet event
             if is_bet_event:
                 act = Player.Actions.BET if win_prob < thresholds["bet"] else Player.Actions.CHECK
+                act = Player.Actions.FOLD
                 self._take_action(act, 40)
                 logger.info("[do_actions] handle bet event.")
                 return
