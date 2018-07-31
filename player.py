@@ -191,121 +191,98 @@ class Bot(Player):
         # pre-flop
         if table.round_name == "Deal":
             win_prob = HandEvaluator().evaluate_preflop_win_prob(self.cards, len(table.players))
-            thresholds = {"check": 0.15, "call": 0.15, "allin": 0.98, "bet": 0.6, "raise": 0.8, "chipsguard": 0.7}
+            thresholds = {"check": 0.15, "call": 0.15, "allin": 0.98, "bet": 0.6, "raise": 0.8, "chipsguard": 0.4}
 
+            # rank protected rule
+            chips = self.decide_action_by_chips_rate(win_prob, thresholds)
+
+            # decide by win_prob
             act = self._decide_action(win_prob, thresholds)
 
             # avoid other players all-in rule
-            last_action = t.player_actions.pop(0)
-            if t.other_players_allin() and last_action.amount > self.chips * thresholds["chipsguard"]:
-                if win_prob <= 0.7:
-                    act = Player.Actions.FOLD
-                    logger.info("[do_actions] use avoid other players all-in rule.")
-
-            # avoid other players all-in rule
-            if last_action.md5 is not self.md5:
-                player = t.find_player(last_action.md5)
-                if last_action.chips >= 0 and last_action.amount >= self.chips * 0.5:
-                    act = Player.Actions.FOLD
-                    logger.info("[do_actions] use avoid other player has higher win rate.")
-
-                if player and not player.allin:
-                    other_player_chips_risk = 0 if last_action.chips == 0 else last_action.amount / last_action.chips
-                    if win_prob < 0.6:
-                        if other_player_chips_risk > 0.6:
-                            act = Player.Actions.FOLD
-                            logger.info("[do_actions] use avoid other player has higher win rate.")
-
-            # rank protected rule
-            chips_rate = self.chips / t.total_chips()
-            if chips_rate > 0.3 and win_prob <= 0.7:
-                act = Player.Actions.FOLD
-                logger.info("[do_actions] use rank protected rule.")
+            act = self.decide_action_by_last_action(t, act, win_prob, thresholds)
 
             # Big-blind rule, check first if you're big-blind player.
-            if t.is_big_blind_player():
-                logger.info("[do_actions] AiCEE is big-blind player. amount: %s", t.big_blind.amount)
-                if t.big_blind.amount / self.chips > 1.0:
-                    if win_prob >= 0.2:
-                        act = Player.Actions.CHECK
-                        logger.info("[do_actions] use Big-blind rule.")
+            # act = self.decide_action_when_bigblind_player(t, act)
 
-                if t.big_blind.amount / self.chips > 2.0:
-                    act = Player.Actions.CHECK
-                    logger.info("[do_actions] use Big-blind rule.")
-
-                if last_action.amount / self.chips <= 0.1:
-                    act = Player.Actions.CHECK
-                    logger.info("[do_actions] use Big-blind rule.")
-
+            # final action
             self._take_action(act)
 
         # flop, turn, river
         else:
             win_prob = HandEvaluator().evaluate_postflop_win_prob(self.cards, table.board)
-            thresholds = {"check": 0.15, "call": 0.15, "allin": 0.98, "bet": 0.4, "raise": 0.8, "chipsguard": 0.7}
+            thresholds = {"check": 0.2, "call": 0.2, "allin": 0.98, "bet": 0.4, "raise": 0.8, "chipsguard": 0.4}
 
             # round count rules
             if t.round_count > 20:
-                thresholds = {"check": 0.15, "call": 0.15, "allin": 0.8, "bet": 0.3, "raise": 0.5, "chipsguard": 0.5}
+                thresholds = {"check": 0.15, "call": 0.15, "allin": 0.8, "bet": 0.3, "raise": 0.5, "chipsguard": 0.4}
                 logger.info("[do_actions] use round count > 20 rule.")
+
+            # rank protected rule
+            chips = self.decide_action_by_chips_rate(win_prob, thresholds)
 
             # default action based on thresholds
             act = self._decide_action(win_prob, thresholds)
 
-            # chips guard rule
-            chips = self.chips * win_prob
-            if chips >= self.chips * thresholds["chipsguard"]:
-                chips = self.chips * thresholds["chipsguard"]
-                logger.info("[do_actions] use chips guard rule.")
-
             # avoid other players all-in rule
-            last_action = t.player_actions.pop(0)
-
-            if last_action.md5 is not self.md5:
-                player = t.find_player(last_action.md5)
-                if player and not player.allin:
-                    other_player_chips_risk = last_action.amount/last_action.chips
-                    if win_prob < 0.6:
-                        if other_player_chips_risk > 0.6:
-                            act = Player.Actions.FOLD
-                            logger.info("[do_actions] use avoid other player has higher win rate.")
-
-            # avoid other players all-in rule
-            if t.other_players_allin() and last_action.amount > self.chips * thresholds["chipsguard"]:
-                if win_prob <= 0.7:
-                    act = Player.Actions.FOLD
-                    logger.info("[do_actions] use avoid other players all-in rule.")
-
-            # rank protected rule
-            chips_rate = self.chips / t.total_chips()
-            if chips_rate > 0.3 and win_prob <= 0.7:
-                act = Player.Actions.FOLD
-                logger.info("[do_actions] use rank protected rule.")
+            act = self.decide_action_by_last_action(t, act, win_prob, thresholds)
 
             # Big-blind rule, check first if you're big-blind player.
-            if t.is_big_blind_player():
-                logger.info("[do_actions] AiCEE is big-blind player. amount: %s", t.big_blind.amount)
-                if t.big_blind.amount / self.chips > 1.0:
-                    if win_prob >= 0.2:
-                        act = Player.Actions.CHECK
-                        logger.info("[do_actions] use Big-blind rule.")
-
-                if t.big_blind.amount / self.chips > 2.0:
-                    act = Player.Actions.CHECK
-                    logger.info("[do_actions] use Big-blind rule.")
-
-                if last_action.amount / self.chips <= 0.1:
-                    act = Player.Actions.CHECK
-                    logger.info("[do_actions] use Big-blind rule.")
+            # act = self.decide_action_when_bigblind_player(t, act)
 
             # handle bet event
             if is_bet_event:
                 act = Player.Actions.BET if win_prob < thresholds["bet"] else Player.Actions.CHECK
-                self._take_action(act, chips)
+                self._take_action(act, 40)
                 logger.info("[do_actions] handle bet event.")
                 return
 
+            # final action
             self._take_action(act, chips)
 
+    def decide_action_by_last_action(self, t, act, win_prob, thresholds):
 
+        # do nothing, return default act
+        if len(t.player_actions) <= 0:
+            logger.info("[do_actions] no actions data.")
+            act = Player.Actions.FOLD
+            return act
+
+        # avoid other players all-in rule
+        last_action = t.player_actions.pop(0)
+        if t.other_players_allin() and last_action.amount > self.chips * thresholds["chipsguard"]:
+            if win_prob <= 0.7:
+                act = Player.Actions.FOLD
+                logger.info("[do_actions] use avoid other players all-in rule.")
+
+        # avoid other players all-in rule
+        if last_action.md5 is not self.md5:
+            player = t.find_player(last_action.md5)
+            if last_action.chips >= 0 and last_action.amount >= self.chips * 0.5:
+                act = Player.Actions.FOLD
+                logger.info("[do_actions] use avoid other player has higher win rate.")
+
+            if player and not player.allin:
+                other_player_chips_risk = 0.6 if last_action.chips == 0 else last_action.amount / last_action.chips
+                if win_prob < 0.6:
+                    if other_player_chips_risk >= 0.6:
+                        act = Player.Actions.FOLD
+                        logger.info("[do_actions] use avoid other player has higher win rate.")
+
+        return act
+
+    def decide_action_when_bigblind_player(self, t, act):
+        if t.is_big_blind_player():
+            logger.info("[do_actions] AiCEE is big-blind player. amount: %s", t.big_blind.amount)
+            if t.big_blind.amount >= 640:
+                if win_prob >= 0.3:
+                    act = Player.Actions.CHECK
+                    logger.info("[do_actions] use Big-blind rule.")
+        return act
+
+    def decide_action_by_chips_rate(self, win_prob, thresholds):
+        chips = self.chips * win_prob
+        if chips >= self.chips * thresholds["chipsguard"]:
+            chips = self.chips * thresholds["chipsguard"]
+            logger.info("[do_actions] use chips guard rule.")
+        return chips
