@@ -97,6 +97,14 @@ class Table(object):
         self.raise_count = data.raiseCount
         self.bet_count = data.betCount
         self.round_name = data.roundName
+
+        # list big-blind and small-blind players
+        if len(self.big_blind) > 0 and self.big_blind.playerName != data.bigBlind.playerName:
+            logging.info("[new_round] BB player: %s, %s", self.big_blind.playerName[:5], self.big_blind.amount)
+
+        if len(self.small_blind) > 0 and self.small_blind.playerName != data.smallBlind.playerName:
+            logging.info("[new_round] SB player: %s, %s", self.small_blind.playerName[:5], self.small_blind.amount)
+
         self.small_blind = data.smallBlind
         self.big_blind = data.bigBlind
 
@@ -253,8 +261,6 @@ class Table(object):
         self._total_count = data['total_count']
 
     def _save_summarize(self):
-        log_dic = os.path.dirname(os.path.abspath(__file__)) + '\\logs\\'
-        filename = log_dic + datetime.datetime.now().strftime('%Y-%m-%d-%H-%M') + '-summaries.json'
         summarize = dict()
         summarize['time'] = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M')
         summarize['table_number'] = self.number
@@ -262,8 +268,7 @@ class Table(object):
         summarize['win_rate'] = self._win_count / self._total_count
         summarize['chips'] = self._chips
 
-        with open(filename, 'w+') as outfile:
-            json.dump(summarize, outfile)
+        utils.generate_summarize_log(summarize)
 
     def other_players_allin(self):
         someone_allin = False

@@ -6,6 +6,7 @@ from plugins.treys import Card
 from plugins.treys import Evaluator
 from plugins.treys import Deck
 
+
 class PseudoDesk:
     def __init__(self, deck):
         self._cards = list(deck)
@@ -43,7 +44,7 @@ class HandEvaluator(object):
             for card in board:
                 sample_board.append(card)
 
-        #for card in sample_board:
+        # for card in sample_board:
         #    if card in self._deck.cards:
         #        self._deck.remove(card)
         #    logging.info('Unused cards: {0}'.format(len(self._deck.cards)))
@@ -107,15 +108,11 @@ class HandEvaluator(object):
 
         odds = 0
         for item_key, item_value in self._lookup.items():
-            if item_key == key and num_player > 1:
-                logging.info("[evaluate_preflop_win_prob] %s, %s, %s, %s",
+            if item_key == key and num_player >= 2:
+                logging.info("[evaluate_preflop_win_prob] cards: %s (%s), number of player: %s, win_prob: %s",
                              Card.print_pretty_cards(cards),
-                             item_key, str(num_player-1), self._lookup[key][0].get(str(num_player-1)))
-                odds = float(self._lookup[key][0].get(str(num_player-1)))
-
-                # pair
-                if Card.get_rank_int(cards[0]) == Card.get_rank_int(cards[1]):
-                    odds *= 2.0
+                             item_key, str(num_player), self._lookup[key][0].get(str(num_player)))
+                odds = float(self._lookup[key][0].get(str(num_player)))
         return odds
 
 

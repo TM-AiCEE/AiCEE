@@ -1,5 +1,6 @@
 import logging
 import settings
+import utils
 
 from run import receive_from
 from player import Player
@@ -31,6 +32,7 @@ def new_peer_2(message):
         logger.info("[__new_peer_2] table number is: %s", t.number)
         if settings.TRAINING_MODE:
             logger.info("[__new_peer_2] http://poker-training.vtr.trendnet.org:3001/game.html?table=%s", t.number)
+        utils.generate_logs(t.number)
 
     for pjson in d.players:
         player = t.find_player(pjson.playerName)

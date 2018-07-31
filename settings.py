@@ -6,3 +6,4 @@ MAX_GAMES = 6
 ALWAYS_FOLD = False
 MAX_AMOUNT_CHIPS_ROUND = 320
 bot_name = ""
+LOG_FOLDER_NAME = "logs"

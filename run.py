@@ -1,7 +1,5 @@
 import logging
 import sys
-import datetime
-import os
 import settings
 
 from player import Bot
@@ -17,18 +15,6 @@ kw = {
 }
 
 logging.basicConfig(**kw)
-
-ROOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
-if not os.path.exists(ROOT_DIR):
-    os.mkdir(ROOT_DIR)
-
-# TODO: generate Y-m-d-H-table-number-players.log
-log_filename = os.path.join(ROOT_DIR, datetime.datetime.now().strftime('%Y-%m-%d-%H-%M') + '-bot.log')
-fh = logging.FileHandler(filename=os.path.join(log_filename), mode='w', encoding='utf-8')
-fh.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
-formatter = logging.Formatter('[%(asctime)s] %(message)s')
-fh.setFormatter(formatter)
-logging.getLogger().addHandler(fh)
 
 
 def receive_from(name, flags=0):
@@ -49,8 +35,6 @@ if __name__ == '__main__':
         settings.bot_name = bot_name
     else:
         bot_name = settings.bot_name
-
-    logging.info("save logs in %s", log_filename)
 
     if settings.TRAINING_MODE:
         client = TexasPokerClient(settings.TRAINING_SERVER_URL)
