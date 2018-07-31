@@ -88,10 +88,11 @@ class TexasPokerClient(WebSocketClient):
                 break
 
     def on_error(self, e):
-        logging.info("[TexasPokerClient] on_error: %s", e)
-        logging.info("[TexasPokerClient] on_error, wait for 5 secs, reconnect to server...")
-        self.reconnect_count += 1
-        time.sleep(5)
+        #logging.info("[TexasPokerClient] on_error: %s", e)
+        #logging.info("[TexasPokerClient] on_error, wait for 5 secs, reconnect to server...")
+        #self.reconnect_count += 1
+        #time.sleep(5)
+        #self.reconnect()
         if self.reconnect_count > 10:
             raise sys.exit(0)
 

@@ -234,7 +234,7 @@ class Table(object):
         self._winners.clear()
 
         player = self.players.pop(0)
-        self.players.clear()
+        #self.players.clear()
         self.summarize()
 
         if not self._win:
@@ -306,3 +306,4 @@ class TableManager(metaclass=SingletonMetaclass):
             raise sys.exit("Creating table object before joining to server is necessary.")
 
         return self.tables[0]
+
