@@ -202,7 +202,7 @@ class Bot(Player):
             act = self._decide_action(win_prob, thresholds)
 
             # avoid other players all-in rule
-            act = self.decide_action_by_last_ction(t, act, win_prob, thresholds)
+            act = self.decide_action_by_last_action(t, act, win_prob, thresholds)
 
             # Big-blind rule, check first if you're big-blind player.
             # act = self.decide_action_when_bigblind_player(t, act)
