@@ -18,11 +18,11 @@ kw = {
 
 logging.basicConfig(**kw)
 
-ROOT_DIR = os.path.dirname(os.path.abspath(__file__)) + '\\logs\\'
+ROOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
 if not os.path.exists(ROOT_DIR):
     os.mkdir(ROOT_DIR)
 
-log_filename = ROOT_DIR + datetime.datetime.now().strftime('%Y-%m-%d-%H-%M') + '-bot.log'
+log_filename = os.path.join(ROOT_DIR, datetime.datetime.now().strftime('%Y-%m-%d-%H-%M') + '-bot.log')
 fh = logging.FileHandler(filename=os.path.join(log_filename), mode='w', encoding='utf-8')
 fh.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
 formatter = logging.Formatter('[%(asctime)s] %(message)s')

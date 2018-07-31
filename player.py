@@ -2,6 +2,7 @@
 import json
 import logging
 import hashlib
+import settings
 
 from enum import Enum
 from plugins.evaluation.handevaluator import HandEvaluator
@@ -119,7 +120,8 @@ class Bot(Player):
 
     def _take_action(self, action, amount=0):
 
-        action = Player.Actions.FOLD
+        if settings.ALWAYS_FOLD:
+            action = Player.Actions.FOLD
 
         logging.info("[do_actions] AiCEE's actions is (%s), amount (%d)",
                      super(Bot, self).ACTIONS_CLASS_TO_STRING[action.value], amount)
@@ -192,7 +194,7 @@ class Bot(Player):
 
         # pre-flop
         if table.round_name == "Deal":
-            win_prob = HandEvaluator().evaluate_preflop_win_prob(self.cards, len(table.players))
+            win_prob = HandEvaluator().evaluate_preflop_win_prob(self.cards, t.number_player())
             thresholds = {"check": 0.15, "call": 0.15, "allin": 0.98, "bet": 0.6, "raise": 0.8, "chipsguard": 0.4}
 
             # rank protected rule
@@ -205,7 +207,7 @@ class Bot(Player):
             act = self.decide_action_by_last_action(t, act, win_prob, thresholds)
 
             # Big-blind rule, check first if you're big-blind player.
-            # act = self.decide_action_when_bigblind_player(t, act)
+            act = self.decide_action_when_bigblind_player(t, act, win_prob)
 
             # final action
             self._take_action(act)
@@ -217,26 +219,25 @@ class Bot(Player):
 
             # round count rules
             if t.round_count > 20:
-                thresholds = {"check": 0.15, "call": 0.15, "allin": 0.8, "bet": 0.3, "raise": 0.5, "chipsguard": 0.4}
+                thresholds = {"check": 0.15, "call": 0.15, "allin": 0.8, "bet": 0.3, "raise": 0.5, "chipsguard": 0.2}
                 logger.info("[do_actions] use round count > 20 rule.")
 
             # rank protected rule
             chips = self.decide_action_by_chips_rate(win_prob, thresholds)
 
             # default action based on thresholds
-            #act = self._decide_action(win_prob, thresholds)
+            act = self._decide_action(win_prob, thresholds)
 
             # avoid other players all-in rule
-            #act = self.decide_action_by_last_action(t, act, win_prob, thresholds)
+            act = self.decide_action_by_last_action(t, act, win_prob, thresholds)
 
             # Big-blind rule, check first if you're big-blind player.
-            # act = self.decide_action_when_bigblind_player(t, act)
+            act = self.decide_action_when_bigblind_player(t, act, win_prob)
 
             # handle bet event
             if is_bet_event:
                 act = Player.Actions.BET if win_prob < thresholds["bet"] else Player.Actions.CHECK
-                act = Player.Actions.FOLD
-                self._take_action(act, 40)
+                self._take_action(act, 20)
                 logger.info("[do_actions] handle bet event.")
                 return
 
@@ -274,18 +275,23 @@ class Bot(Player):
 
         return act
 
-    def decide_action_when_bigblind_player(self, t, act):
+    def decide_action_when_bigblind_player(self, t, act, win_prob):
         if t.is_big_blind_player():
             logger.info("[do_actions] AiCEE is big-blind player. amount: %s", t.big_blind.amount)
-            if t.big_blind.amount >= 640:
-                if win_prob >= 0.3:
+            if t.big_blind.amount >= 320:
+                if win_prob >= 0.6:
                     act = Player.Actions.CHECK
                     logger.info("[do_actions] use Big-blind rule.")
         return act
 
     def decide_action_by_chips_rate(self, win_prob, thresholds):
-        chips = self.chips * win_prob
+        chips = self.chips * win_prob * 0.1
+
         if chips >= self.chips * thresholds["chipsguard"]:
             chips = self.chips * thresholds["chipsguard"]
             logger.info("[do_actions] use chips guard rule.")
+
+        if chips >= settings.MAX_AMOUNT_CHIPS_ROUND:
+            chips = settings.MAX_AMOUNT_CHIPS_ROUND
+
         return chips
