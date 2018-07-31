@@ -118,13 +118,26 @@ class Bot(Player):
             }
         }))
 
-    def _take_action(self, action, amount=0):
+    def _take_action(self, action, t, amount=0):
 
         if settings.ALWAYS_FOLD:
             action = Player.Actions.FOLD
 
-        logging.info("[do_actions] AiCEE's actions is (%s), amount (%d)",
-                     super(Bot, self).ACTIONS_CLASS_TO_STRING[action.value], amount)
+        if action == Player.Actions.BET:
+            logging.info("[do_actions] AiCEE's actions is (%s), amount (%d)",
+                         super(Bot, self).ACTIONS_CLASS_TO_STRING[action.value], amount)
+        else:
+            if action == Player.Actions.CALL:
+                # do nothing, return default act
+                if len(t.player_actions) <= 0:
+                    logger.info("[do_actions] no actions data. unable to get last player's amount.")
+                else:
+                    last_action = t.player_actions.pop(0)
+                    logging.info("[do_actions] AiCEE's actions is (%s), amount (%d)",
+                                 super(Bot, self).ACTIONS_CLASS_TO_STRING[action.value], last_action.amount)
+            else:
+                logging.info("[do_actions] AiCEE's actions is (%s), amount (0)",
+                             super(Bot, self).ACTIONS_CLASS_TO_STRING[action.value])
 
         # If the action is 'bet', the message must include an 'amount'
         if Player.Actions.BET == action:
@@ -195,7 +208,7 @@ class Bot(Player):
         # pre-flop
         if table.round_name == "Deal":
             win_prob = HandEvaluator().evaluate_preflop_win_prob(self.cards, t.number_player())
-            thresholds = {"check": 0.15, "call": 0.15, "allin": 0.98, "bet": 0.6, "raise": 0.8, "chipsguard": 0.4}
+            thresholds = {"check": 0.15, "call": 0.20, "bet": 0.6, "raise": 0.8, "allin": 0.98, "chipsguard": 0.2}
 
             # rank protected rule
             chips = self.decide_action_by_chips_rate(win_prob, thresholds)
@@ -210,17 +223,16 @@ class Bot(Player):
             act = self.decide_action_when_bigblind_player(t, act, win_prob)
 
             # final action
-            self._take_action(act)
+            self._take_action(act, t)
 
         # flop, turn, river
         else:
             win_prob = HandEvaluator().evaluate_postflop_win_prob(self.cards, table.board)
-            thresholds = {"check": 0.2, "call": 0.2, "allin": 0.98, "bet": 0.4, "raise": 0.8, "chipsguard": 0.4}
+            thresholds = {"check": 0.20, "call": 0.25, "bet": 0.4, "raise": 0.8, "allin": 0.98, "chipsguard": 0.4}
 
             # round count rules
-            if t.round_count > 20:
-                thresholds = {"check": 0.15, "call": 0.15, "allin": 0.8, "bet": 0.3, "raise": 0.5, "chipsguard": 0.2}
-                logger.info("[do_actions] use round count > 20 rule.")
+            # if t.round_count > 20:
+            #    logger.info("[do_actions] use round count > 20 rule.")
 
             # rank protected rule
             chips = self.decide_action_by_chips_rate(win_prob, thresholds)
@@ -237,12 +249,12 @@ class Bot(Player):
             # handle bet event
             if is_bet_event:
                 act = Player.Actions.BET if win_prob < thresholds["bet"] else Player.Actions.CHECK
-                self._take_action(act, 20)
+                self._take_action(act, 40)
                 logger.info("[do_actions] handle bet event.")
                 return
 
             # final action
-            self._take_action(act, chips)
+            self._take_action(act, t, chips)
 
     def decide_action_by_last_action(self, t, act, win_prob, thresholds):
 
@@ -273,11 +285,16 @@ class Bot(Player):
                         act = Player.Actions.FOLD
                         logger.info("[do_actions] use avoid other player has higher win rate.")
 
+        # protected by rank
+        chips_risk = self.chips / t.total_chips()
+        if chips_risk >= 0.3 and win_prob <= 0.7:
+            act = Player.Actions.FOLD
+
         return act
 
     def decide_action_when_bigblind_player(self, t, act, win_prob):
         if t.is_big_blind_player():
-            logger.info("[do_actions] AiCEE is big-blind player. amount: %s", t.big_blind.amount)
+            logger.info("[do_actions] AiCEE (%s) is big-blind player. amount: %s", self.name[:5], t.big_blind.amount)
             if t.big_blind.amount >= 320:
                 if win_prob >= 0.6:
                     act = Player.Actions.CHECK

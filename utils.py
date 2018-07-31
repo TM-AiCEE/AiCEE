@@ -35,7 +35,7 @@ def generate_logs(number):
     log_filename = os.path.join(log_folder, n + ".log")
     x = n
 
-    logging.info("[__new_peer_2] save logs in %s, %s", log_filename, x)
+    logging.info("[__new_peer_2] save logs in %s, id: %s", log_filename, x)
 
     fh = logging.FileHandler(filename=os.path.join(log_filename), mode='w', encoding='utf-8')
     fh.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)

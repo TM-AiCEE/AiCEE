@@ -3,7 +3,6 @@ import sys
 import json
 import time
 import random
-import os
 import datetime
 import settings
 import utils
