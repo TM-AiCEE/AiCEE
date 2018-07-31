@@ -54,8 +54,9 @@ class Evaluator(object):
                 prime = Card.prime_product_from_hand(cards)
                 return self.table.unsuited_lookup[prime]
         except KeyError:
-            print(prime)
-            print(self.table.unsuited_lookup)
+            print("[evaluator.py] unable find key in _five().")
+            #print(self.table.unsuited_lookup)
+
 
     def _six(self, cards):
         """
