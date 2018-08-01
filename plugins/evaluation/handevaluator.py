@@ -86,11 +86,15 @@ class HandEvaluator(object):
 
         win_prob, sim_win_prob, class_string = self._calculate_win_prob(hands, board_cards)
 
-        logging.info("[evaluate_postflop_win_prob] hand: %s, win_prob: %s, hand= {%s}, sim win_prob: %s",
-                     Card.print_pretty_cards(hands + board_cards), win_prob, class_string, sim_win_prob)
-
-        if win_prob < sim_win_prob:
+        if win_prob > sim_win_prob:
+            logging.info("[evaluate_postflop_win_prob] hand: %s, win_prob: %s, hand= {%s}, "
+                         "sim win_prob: %s, use win_prob.",
+                         Card.print_pretty_cards(hands + board_cards), win_prob, class_string, sim_win_prob)
             return win_prob
+
+        logging.info("[evaluate_postflop_win_prob] hand: %s, win_prob: %s, hand= {%s}, "
+                     "sim win_prob: %s, use sim_win_prob.",
+                     Card.print_pretty_cards(hands + board_cards), win_prob, class_string, sim_win_prob)
 
         return sim_win_prob
 

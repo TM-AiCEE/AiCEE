@@ -32,7 +32,7 @@ def generate_logs(number):
 
     d = datetime.datetime.now().strftime('%Y%m%d%H')
     s = d + str(number)
-    n = str(int(hashlib.sha256(s.encode('utf-8')).hexdigest(), 16) % 10 ** 8)
+    n = str(int(hashlib.sha256(s.encode('utf-8')).hexdigest(), 16) % 10 ** 5)
     log_filename = os.path.join(log_folder, d + n + ".log")
     x = n
 

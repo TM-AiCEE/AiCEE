@@ -50,9 +50,9 @@ def start_of_new_round(message):
     t = TableManager().current()
 
     if t:
-        t.new_round()
         t.update_table(d.table)
         t.update_players(d.players)
+        t.new_round()
 
 
 @receive_from("__deal")

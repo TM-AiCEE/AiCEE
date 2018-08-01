@@ -124,16 +124,16 @@ class Bot(Player):
             action = Player.Actions.FOLD
 
         if action == Player.Actions.BET:
-            logging.info("[do_actions] AiCEE's actions is (%s), amount (%d)",
+            logging.debug("[do_actions] AiCEE's actions is (%s), amount (%d)",
                          super(Bot, self).ACTIONS_CLASS_TO_STRING[action.value], amount)
         else:
             if action == Player.Actions.CALL:
                 if len(t.player_actions) > 0:
                     last_action = t.player_actions[0]
-                    logging.info("[do_actions] AiCEE's actions is (%s), amount (%d)",
+                    logging.debug("[do_actions] AiCEE's actions is (%s), amount (%d)",
                                  super(Bot, self).ACTIONS_CLASS_TO_STRING[action.value], last_action.amount)
             else:
-                logging.info("[do_actions] AiCEE's actions is (%s), amount (0)",
+                logging.debug("[do_actions] AiCEE's actions is (%s), amount (0)",
                              super(Bot, self).ACTIONS_CLASS_TO_STRING[action.value])
 
         # If the action is 'bet', the message must include an 'amount'
@@ -186,7 +186,7 @@ class Bot(Player):
     @staticmethod
     def _decide_action(win_prob, thresholds):
 
-        logger.info("[do_actions] current thresholds: %s", thresholds)
+        logger.debug("[do_actions] current thresholds: %s", thresholds)
 
         if win_prob >= thresholds["allin"]:
             return Player.Actions.ALLIN
@@ -241,7 +241,7 @@ class Bot(Player):
                 act = Player.Actions.BET if win_prob < thresholds["bet"] else Player.Actions.CHECK
                 chips = self.decide_action_by_chips_rate(win_prob, thresholds)
                 self._take_action(act, chips)
-                logger.info("[do_actions] handle bet event, chips: %s", chips)
+                logger.debug("[do_actions] handle bet event, chips: %s", chips)
             else:
                 self._take_action(act, t)
 
@@ -249,7 +249,7 @@ class Bot(Player):
 
         # do nothing, return default act
         if len(t.player_actions) <= 0:
-            logger.info("[do_actions] no actions data.")
+            logger.debug("[do_actions] no actions data.")
             act = Player.Actions.FOLD
             return act
 
@@ -258,14 +258,14 @@ class Bot(Player):
         if t.other_players_allin() and last_action.amount > self.chips * thresholds["chipsguard"]:
             if win_prob <= 0.7:
                 act = Player.Actions.FOLD
-                logger.info("[do_actions] use avoid other players all-in rule.")
+                logger.debug("[do_actions] use avoid other players all-in rule.")
 
         # avoid other players all-in rule
         if last_action.md5 is not self.md5:
             player = t.find_player(last_action.md5)
             if last_action.chips >= 0 and last_action.amount > settings.MAX_AMOUNT_CHIPS_ROUND * 2:
                 act = Player.Actions.FOLD
-                logger.info("[do_actions] use avoid other player bet big amount. (%s) (%s)",
+                logger.debug("[do_actions] use avoid other player bet big amount. (%s) (%s)",
                             last_action.amount, settings.MAX_AMOUNT_CHIPS_ROUND * 2)
 
             if player and not player.allin:
@@ -273,25 +273,25 @@ class Bot(Player):
                 if win_prob < 0.6:
                     if other_player_chips_risk >= 0.6:
                         act = Player.Actions.FOLD
-                        logger.info("[do_actions] use avoid other player bet big amount. %s, %s, risk: %s",
+                        logger.debug("[do_actions] use avoid other player bet big amount. %s, %s, risk: %s",
                                     last_action.amount, last_action.chips, other_player_chips_risk)
 
         # protected by rank
         chips_risk = self.chips / t.total_chips()
         if chips_risk >= 0.3 and win_prob <= 0.7:
             act = Player.Actions.FOLD
-            logger.info("[do_actions] protected chip by rank.")
+            logger.debug("[do_actions] protected chip by rank.")
 
         return act
 
     def decide_action_when_bigblind_player(self, t, act, win_prob):
-        if t.is_big_blind_player():
-            logger.info("[do_actions] AiCEE (%s) is big-blind player. amount: %s",
+        if t.is_big_blind_player(self.md5):
+            logger.debug("[do_actions] AiCEE (%s) is big-blind player. amount: %s",
                         t.big_blind.playerName[:5], t.big_blind.amount)
             if t.big_blind.amount >= settings.MAX_AMOUNT_CHIPS_ROUND:
                 if win_prob < 0.6:
                     act = Player.Actions.FOLD
-                    logger.info("[do_actions] use Big-blind rule.")
+                    logger.debug("[do_actions] use Big-blind rule.")
         return act
 
     def decide_action_by_chips_rate(self, win_prob, thresholds):
@@ -299,10 +299,10 @@ class Bot(Player):
 
         if chips >= self.chips * thresholds["chipsguard"]:
             chips = self.chips * thresholds["chipsguard"]
-            logger.info("[do_actions] use chips guard rule.")
+            logger.debug("[do_actions] use chips guard rule.")
 
         if chips >= settings.MAX_AMOUNT_CHIPS_ROUND:
             chips = settings.MAX_AMOUNT_CHIPS_ROUND
-            logger.info("[do_actions] use max amount chips in round rule.")
+            logger.debug("[do_actions] use max amount chips in round rule.")
 
         return chips

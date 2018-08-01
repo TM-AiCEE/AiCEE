@@ -23,7 +23,7 @@ class Table(object):
         self.status = status
         self.round_name = ""
         self.board = list()
-        self.round_count = 0
+        self.round_count = -1
         self.raise_count = 0
         self.bet_count = 0
         self.small_blind = dict()
@@ -53,7 +53,7 @@ class Table(object):
     def _reset(self):
         self.round_name = ""
         self.board.clear()
-        self.round_count = 0
+        self.round_count = -1
         self.raise_count = 0
         self.bet_count = 0
         self.small_blind.clear()
@@ -100,13 +100,6 @@ class Table(object):
         self.round_name = data.roundName
         self.small_blind = data.smallBlind
         self.big_blind = data.bigBlind
-
-        # list big-blind and small-blind players
-        # if len(self.big_blind) > 0 and self.big_blind.playerName != data.bigBlind.playerName:
-        #    logging.info("[new_round] BB player: %s, %s", data.bigBlind.playerName[:5], data.bigBlind.amount)
-
-        # if len(self.small_blind) > 0 and self.small_blind.playerName != data.smallBlind.playerName:
-        #    logging.info("[new_round] SB player: %s, %s", data.smallBlind.playerName[:5], data.smallBlind.amount)
 
         if hasattr(data, "maxReloadCount"):
             self.max_reload_count = data.maxReloadCount
@@ -158,6 +151,13 @@ class Table(object):
 
     def new_round(self):
         logging.info("========== new round (%s) ========", self.round_count)
+
+        # list big-blind and small-blind players
+        if len(self.big_blind) > 0 and len(self.small_blind) > 0:
+            logging.info("[%5s] Big-Blind: (%s), bet:(%s), Small-Blind: (%s), bet:(%s)",
+                         self.round_name,
+                         self.big_blind.playerName[:5], self.big_blind.amount,
+                         self.small_blind.playerName[:5], self.small_blind.amount)
 
     def end_round(self):
 
@@ -219,11 +219,20 @@ class Table(object):
         act = self.player_actions[0]
 
         if act.act == "allin":
-            logging.info("[%5s] player name: %s, chips: %5s, amount: %s",
-                         self.round_name, act.md5[:5], act.chips, act.amount)
+            logging.info("[%5s] player name: %s, chips: %5s, amount: %4s, BB: %5s, SB: %5s",
+                         self.round_name, act.md5[:5], act.chips, act.amount,
+                         self.is_big_blind_player(act.md5),
+                         self.is_small_blind_player(act.md5))
 
-        logging.info("[%5s] player name: %s, action: %5s, amount:%4s, chips: %5s, total bet: %4d",
-                     self.round_name, act.md5[:5], act.act, act.amount, act.chips, self.total_bet)
+        if self.is_big_blind_player(act.md5):
+            logging.info("[%5s] player name: %s, action: %5s, amount:%4s, chips: %5s, total bet: %4d. (Big-Blind)",
+                         self.round_name, act.md5[:5], act.act, act.amount, act.chips, self.total_bet)
+        elif self.is_small_blind_player(act.md5):
+            logging.info("[%5s] player name: %s, action: %5s, amount:%4s, chips: %5s, total bet: %4d. (Small-Blind)",
+                         self.round_name, act.md5[:5], act.act, act.amount, act.chips, self.total_bet)
+        else:
+            logging.info("[%5s] player name: %s, action: %5s, amount:%4s, chips: %5s, total bet: %4d.",
+                         self.round_name, act.md5[:5], act.act, act.amount, act.chips, self.total_bet)
 
     def update_winners_info(self, winners):
         for winner in winners:
@@ -259,15 +268,9 @@ class Table(object):
 
         if self._player_games < settings.MAX_GAMES:
             logging.info("[game_over] auto-join game. (%s/%s).", self._player_games, settings.MAX_GAMES)
-            # utils.restart_program()
+            self._mine.join()
         else:
             logging.info("[game_over] already played %s games. won't join new game", self._player_games)
-
-    def _load_summarize(self, file):
-        with open(file) as f:
-            data = json.load(f)
-
-        self._total_count = data['total_count']
 
     def _save_summarize(self):
         summarize = dict()
@@ -276,6 +279,7 @@ class Table(object):
         summarize['total_count'] = self._total_count
         summarize['win_rate'] = self._win_count / self._total_count
         summarize['chips'] = self._chips
+        summarize['round_count'] = self.round_count
 
         utils.generate_summarize_log(summarize)
 
@@ -292,8 +296,11 @@ class Table(object):
             total_chips += player.chips
         return total_chips
 
-    def is_big_blind_player(self):
-        return self.big_blind.playerName == self._mine.md5
+    def is_big_blind_player(self, md5):
+        return self.big_blind.playerName == md5
+
+    def is_small_blind_player(self, md5):
+        return self.small_blind.playerName == md5
 
     def number_player(self):
         num = 0
