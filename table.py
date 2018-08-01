@@ -96,16 +96,15 @@ class Table(object):
         self.raise_count = data.raiseCount
         self.bet_count = data.betCount
         self.round_name = data.roundName
-
-        # list big-blind and small-blind players
-        if len(self.big_blind) > 0 and self.big_blind.playerName != data.bigBlind.playerName:
-            logging.info("[new_round] BB player: %s, %s", self.big_blind.playerName[:5], self.big_blind.amount)
-
-        if len(self.small_blind) > 0 and self.small_blind.playerName != data.smallBlind.playerName:
-            logging.info("[new_round] SB player: %s, %s", self.small_blind.playerName[:5], self.small_blind.amount)
-
         self.small_blind = data.smallBlind
         self.big_blind = data.bigBlind
+
+        # list big-blind and small-blind players
+        # if len(self.big_blind) > 0 and self.big_blind.playerName != data.bigBlind.playerName:
+        #    logging.info("[new_round] BB player: %s, %s", data.bigBlind.playerName[:5], data.bigBlind.amount)
+
+        # if len(self.small_blind) > 0 and self.small_blind.playerName != data.smallBlind.playerName:
+        #    logging.info("[new_round] SB player: %s, %s", data.smallBlind.playerName[:5], data.smallBlind.amount)
 
         if hasattr(data, "maxReloadCount"):
             self.max_reload_count = data.maxReloadCount

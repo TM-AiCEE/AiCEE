@@ -30,9 +30,10 @@ def generate_logs(number):
     if not os.path.exists(log_folder):
         os.mkdir(log_folder)
 
-    s = datetime.datetime.now().strftime('%Y-%m-%d-%H') + str(number)
+    d = datetime.datetime.now().strftime('%Y%m%d%H')
+    s = d + str(number)
     n = str(int(hashlib.sha256(s.encode('utf-8')).hexdigest(), 16) % 10 ** 8)
-    log_filename = os.path.join(log_folder, n + ".log")
+    log_filename = os.path.join(log_folder, d + n + ".log")
     x = n
 
     logging.info("[__new_peer_2] save logs in %s, id: %s", log_filename, x)
@@ -52,8 +53,7 @@ def generate_summarize_log(data):
         os.mkdir(log_folder)
 
     s = datetime.datetime.now().strftime('%Y-%m-%d')
-    n = str(int(hashlib.sha256(s.encode('utf-8')).hexdigest(), 16) % 10 ** 8)
-    filename = os.path.join(log_folder, n + ".log")
+    filename = os.path.join(log_folder, s + ".log")
 
     data['game_id'] = str(x)
 
