@@ -47,6 +47,8 @@ class Table(object):
         self._win_count = 0
         self._chips = 0
         self._player_games = 1
+        self.current_round = ""
+        self.bet_big_chips = False
 
     def _reset(self):
         self.round_name = ""
@@ -198,10 +200,19 @@ class Table(object):
         if hasattr(json_act, "amount"):
             amount = int(json_act.amount)
 
-        self.player_actions.clear()
-
         act = PlayerAction(json_act.action, json_act.playerName, amount, json_act.chips)
-        self.player_actions.append(act)
+        if json_act != 'fold':
+            self.player_actions.clear()
+            self.player_actions.append(act)
+
+        if act.act == 'Bet' and act.chips >= self._mine.chips:
+            self.bet_big_chips = True
+            self.current_round = self.round_name
+            logging.info("[update actions] %s bet big amount. %s. chip_rate: %s",
+                         self.md5[:5], self.amount, self.amount/self.chips)
+
+        if self.current_round != self.round_name:
+            self.bet_big_chips = False
 
     def show_action(self):
 
@@ -248,7 +259,7 @@ class Table(object):
 
         if self._player_games < settings.MAX_GAMES:
             logging.info("[game_over] auto-join game. (%s/%s).", self._player_games, settings.MAX_GAMES)
-            utils.restart_program()
+            # utils.restart_program()
         else:
             logging.info("[game_over] already played %s games. won't join new game", self._player_games)
 

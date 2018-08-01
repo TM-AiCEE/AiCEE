@@ -5,7 +5,7 @@ import settings
 import datetime
 import os
 import hashlib
-import json
+import json, io
 
 x = ""
 
@@ -36,16 +36,16 @@ def generate_logs(number):
     log_filename = os.path.join(log_folder, d + n + ".log")
     x = n
 
-    logging.info("[__new_peer_2] save logs in %s, id: %s", log_filename, x)
+    logging.info("[__new_peer_2] save logs in %s.", log_filename)
 
-    fh = logging.FileHandler(filename=os.path.join(log_filename), mode='w', encoding='utf-8')
+    fh = logging.FileHandler(filename=os.path.join(log_filename), mode='a', encoding='utf-8')
     fh.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
     formatter = logging.Formatter('[%(asctime)s] %(message)s')
     fh.setFormatter(formatter)
     logging.getLogger().addHandler(fh)
 
 
-def generate_summarize_log(data):
+def generate_summarize_log(d):
     global x
 
     log_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), settings.LOG_FOLDER_NAME)
@@ -55,7 +55,21 @@ def generate_summarize_log(data):
     s = datetime.datetime.now().strftime('%Y-%m-%d')
     filename = os.path.join(log_folder, s + ".log")
 
-    data['game_id'] = str(x)
+    d['game_id'] = str(x)
 
-    with open(filename, 'w+') as outfile:
-        json.dump(data, outfile)
+    if not os.path.isfile(filename):
+        with open(filename, 'w', encoding='utf8') as f:
+            json.dump(d, f, ensure_ascii=False)
+            f.write('\n')
+    else:
+        with io.open(filename, 'r', encoding='utf8') as f:
+            text = f.read()
+
+        with io.open(filename, 'w', encoding='utf8') as f:
+            f.write(text)
+            json.dump(d, f, ensure_ascii=False)
+            f.write('\n')
+
+
+
+

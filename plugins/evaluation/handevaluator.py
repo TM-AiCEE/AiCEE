@@ -94,6 +94,8 @@ class HandEvaluator(object):
 
         return sim_win_prob
 
+    # refer to pre-flop-odds
+    # http://www.natesholdem.com/pre-flop-odds.php
     def evaluate_preflop_win_prob(self, cards, num_player):
         cards = self._converter_to_card(cards)
         cards = sorted(cards, reverse=True)
