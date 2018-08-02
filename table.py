@@ -1,6 +1,5 @@
 import logging
 import sys
-import json
 import time
 import random
 import datetime
@@ -10,7 +9,7 @@ import utils
 from singleton import SingletonMetaclass
 from player import Player, PlayerAction, Bot
 from operator import attrgetter
-from plugins.evaluation.handevaluator import HandEvaluator
+from handevaluator import HandEvaluator
 
 
 class Table(object):
@@ -218,12 +217,6 @@ class Table(object):
 
         act = self.player_actions[0]
 
-        if act.act == "allin":
-            logging.info("[%5s] player name: %s, chips: %5s, amount: %4s, BB: %5s, SB: %5s",
-                         self.round_name, act.md5[:5], act.chips, act.amount,
-                         self.is_big_blind_player(act.md5),
-                         self.is_small_blind_player(act.md5))
-
         if self.is_big_blind_player(act.md5):
             logging.info("[%5s] player name: %s, action: %5s, amount:%4s, chips: %5s, total bet: %4d. (Big-Blind)",
                          self.round_name, act.md5[:5], act.act, act.amount, act.chips, self.total_bet)
@@ -267,8 +260,8 @@ class Table(object):
             time.sleep(reconnect_time)
 
         if self._player_games < settings.MAX_GAMES:
-            logging.info("[game_over] auto-join game. (%s/%s).", self._player_games, settings.MAX_GAMES)
-            self._mine.join()
+            logging.info("[game_over] AiCEE will join new game. (%s/%s).", self._player_games, settings.MAX_GAMES)
+            utils.restart_program()
         else:
             logging.info("[game_over] already played %s games. won't join new game", self._player_games)
 
@@ -276,7 +269,7 @@ class Table(object):
         summarize = dict()
         summarize['time'] = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M')
         summarize['table_number'] = self.number
-        summarize['total_count'] = self._total_count
+        summarize['played_games'] = self._player_games
         summarize['win_rate'] = self._win_count / self._total_count
         summarize['chips'] = self._chips
         summarize['round_count'] = self.round_count

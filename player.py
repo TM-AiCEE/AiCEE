@@ -5,7 +5,7 @@ import hashlib
 import settings
 
 from enum import Enum
-from plugins.evaluation.handevaluator import HandEvaluator
+from handevaluator import HandEvaluator
 
 
 logger = logging.getLogger(__name__)
@@ -110,7 +110,7 @@ class Bot(Player):
         self.minibet = info.minBet
 
     def join(self):
-        logging.info("player name: %s(%s) is going to join.", self.name, self.md5)
+        logging.info("[join] player name: %s(%s) is going to join.", self.name, self.md5)
         self.client.send(json.dumps({
             "eventName": "__join",
             "data": {
@@ -278,7 +278,10 @@ class Bot(Player):
 
         # protected by rank
         chips_risk = self.chips / t.total_chips()
-        if chips_risk >= 0.3 and win_prob <= 0.7:
+        if chips_risk >= 0.3 and win_prob < 0.4 and t.round_name == 'Deal':
+            act = Player.Actions.FOLD
+            logger.debug("[do_actions] protected chip by rank.")
+        if chips_risk >= 0.3 and win_prob < 0.7 and t.round_name != 'Deal':
             act = Player.Actions.FOLD
             logger.debug("[do_actions] protected chip by rank.")
 

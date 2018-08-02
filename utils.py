@@ -33,10 +33,14 @@ def generate_logs(number):
     d = datetime.datetime.now().strftime('%Y%m%d%H')
     s = d + str(number)
     n = str(int(hashlib.sha256(s.encode('utf-8')).hexdigest(), 16) % 10 ** 5)
-    log_filename = os.path.join(log_folder, d + n + ".log")
     x = n
 
-    logging.info("[__new_peer_2] save logs in %s.", log_filename)
+    if settings.TRAINING_MODE:
+        log_filename = os.path.join(log_folder, d + n + "T.log")
+    else:
+        log_filename = os.path.join(log_folder, d + n + "B.log")
+
+    logging.info("[__new_peer_2] log location: %s.", log_filename)
 
     fh = logging.FileHandler(filename=os.path.join(log_filename), mode='a', encoding='utf-8')
     fh.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
@@ -53,7 +57,11 @@ def generate_summarize_log(d):
         os.mkdir(log_folder)
 
     s = datetime.datetime.now().strftime('%Y-%m-%d')
-    filename = os.path.join(log_folder, s + ".log")
+
+    if settings.TRAINING_MODE:
+        filename = os.path.join(log_folder, s + "T.log")
+    else:
+        filename = os.path.join(log_folder, s + "B.log")
 
     d['game_id'] = str(x)
 

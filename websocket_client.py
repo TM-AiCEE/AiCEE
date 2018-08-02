@@ -1,7 +1,8 @@
 import logging
 import json
-import sys
 import time
+import utils
+import sys
 
 from threading import Thread
 from websocket import create_connection
@@ -31,10 +32,6 @@ class WebSocketClient(object):
         else:
             logging.info("[TexasPokerClient] connect failed: %s", self.ws.status)
 
-    def disconnect(self):
-        if self.is_connect:
-            self._disconnect()
-
     def _disconnect(self):
         try:
             if self.ws:
@@ -55,6 +52,16 @@ class WebSocketClient(object):
                 self.on_error(e)
             else:
                 self.on_message(msg)
+
+    def reconnect(self):
+        time.sleep(2)
+        self.stop = True
+        self.thread = Thread(target=_go)
+        self.thread.start()
+
+    def disconnect(self):
+        if self.is_connect:
+            self._disconnect()
 
     def start(self):
         def _go():
@@ -87,12 +94,6 @@ class TexasPokerClient(WebSocketClient):
                 break
 
     def on_error(self, e):
-        #logging.info("[TexasPokerClient] on_error: %s", e)
-        #logging.info("[TexasPokerClient] on_error, wait for 5 secs, reconnect to server...")
-        #self.reconnect_count += 1
-        #time.sleep(5)
-        #self.reconnect()
-        if self.reconnect_count > 10:
-            raise sys.exit(0)
-
+        logging.info("[TexasPokerClient] on_error: %s", e)
+        raise sys.exit(0)
 

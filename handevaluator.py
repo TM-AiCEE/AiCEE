@@ -87,14 +87,22 @@ class HandEvaluator(object):
         win_prob, sim_win_prob, class_string = self._calculate_win_prob(hands, board_cards)
 
         if win_prob > sim_win_prob:
-            logging.info("[evaluate_postflop_win_prob] hand: %s, win_prob: %s, hand= {%s}, "
-                         "sim win_prob: %s, use win_prob.",
-                         Card.print_pretty_cards(hands + board_cards), win_prob, class_string, sim_win_prob)
+            logging.info("[postflop_win_prob] hand: %s, win_prob: %s, hand= {%s}, "
+                         "sim win_prob: %s, use [%s].",
+                         Card.print_pretty_cards(hands + board_cards),
+                         "{:.1%}".format(win_prob),
+                         class_string,
+                         "{:.1%}".format(sim_win_prob),
+                         "{:.1%}".format(win_prob))
             return win_prob
-
-        logging.info("[evaluate_postflop_win_prob] hand: %s, win_prob: %s, hand= {%s}, "
-                     "sim win_prob: %s, use sim_win_prob.",
-                     Card.print_pretty_cards(hands + board_cards), win_prob, class_string, sim_win_prob)
+        else:
+            logging.info("[postflop_win_prob] hand: %s, win_prob: %s, hand= {%s}, "
+                         "sim win_prob: %s, use [%s].",
+                         Card.print_pretty_cards(hands + board_cards),
+                         "{:.1%}".format(win_prob),
+                         class_string,
+                         "{:.1%}".format(sim_win_prob),
+                         "{:.1%}".format(sim_win_prob))
 
         return sim_win_prob
 
@@ -115,7 +123,7 @@ class HandEvaluator(object):
         odds = 0
         for item_key, item_value in self._lookup.items():
             if item_key == key and num_player >= 2:
-                logging.info("[evaluate_preflop_win_prob] cards: %s (%s), number of player: %s, win_prob: %s",
+                logging.info("[preflop_win_prob] cards: %s (%s), number of player: %s, win_prob: %s",
                              Card.print_pretty_cards(cards),
                              item_key, str(num_player), self._lookup[key][0].get(str(num_player)))
                 odds = float(self._lookup[key][0].get(str(num_player)))
