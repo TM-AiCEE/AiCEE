@@ -2,6 +2,7 @@ import logging
 import json
 
 from random import sample
+from termcolor import colored
 from plugins.treys import Card
 from plugins.treys import Evaluator
 from plugins.treys import Deck
@@ -87,22 +88,24 @@ class HandEvaluator(object):
         win_prob, sim_win_prob, class_string = self._calculate_win_prob(hands, board_cards)
 
         if win_prob > sim_win_prob:
+            cwin_prob = colored("{:.1%}".format(win_prob), 'yellow')
             logging.info("[postflop_win_prob] hand: %s, win_prob: %s, hand= {%s}, "
                          "sim win_prob: %s, use [%s].",
                          Card.print_pretty_cards(hands + board_cards),
                          "{:.1%}".format(win_prob),
                          class_string,
                          "{:.1%}".format(sim_win_prob),
-                         "{:.1%}".format(win_prob))
+                         cwin_prob)
             return win_prob
         else:
+            cwin_prob = colored("{:.1%}".format(sim_win_prob), 'yellow')
             logging.info("[postflop_win_prob] hand: %s, win_prob: %s, hand= {%s}, "
                          "sim win_prob: %s, use [%s].",
                          Card.print_pretty_cards(hands + board_cards),
                          "{:.1%}".format(win_prob),
                          class_string,
                          "{:.1%}".format(sim_win_prob),
-                         "{:.1%}".format(sim_win_prob))
+                         cwin_prob)
 
         return sim_win_prob
 

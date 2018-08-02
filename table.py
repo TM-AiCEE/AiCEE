@@ -5,7 +5,9 @@ import random
 import datetime
 import settings
 import utils
+import os
 
+from termcolor import colored
 from singleton import SingletonMetaclass
 from player import Player, PlayerAction, Bot
 from operator import attrgetter
@@ -186,6 +188,12 @@ class Table(object):
                              (index+1), player.md5[:5], player.chips, player.chips/total_chips,
                              card, message, rank, win_money)
 
+        fname = os.path.join(os.path.dirname(os.path.abspath(__file__)), "status.txt")
+        if os.path.isfile(fname):
+            logging.info(s)
+            os.remove(fname)
+            utils.restart_program()
+
         # clear cards for each player
         for player in self.players:
             player.cards.clear()
@@ -218,14 +226,35 @@ class Table(object):
         act = self.player_actions[0]
 
         if self.is_big_blind_player(act.md5):
-            logging.info("[%5s] player name: %s, action: %5s, amount:%4s, chips: %5s, total bet: %4d. (Big-Blind)",
-                         self.round_name, act.md5[:5], act.act, act.amount, act.chips, self.total_bet)
+            c_bigblind = colored("Big-Blind", 'magenta')
+
+            if act.md5 == self._mine.md5:
+                c_act = colored(act.act, 'yellow')
+            else:
+                c_act = act.act
+
+            logging.info("[%5s] player name: %s, action: %5s, amount:%4s, chips: %5s, total bet: %4d. (%s)",
+                         self.round_name, act.md5[:5], c_act, act.amount, act.chips, self.total_bet, c_bigblind)
+
         elif self.is_small_blind_player(act.md5):
-            logging.info("[%5s] player name: %s, action: %5s, amount:%4s, chips: %5s, total bet: %4d. (Small-Blind)",
-                         self.round_name, act.md5[:5], act.act, act.amount, act.chips, self.total_bet)
+            c_bigblind = colored("Small-Blind", 'magenta')
+
+            if act.md5 == self._mine.md5:
+                c_act = colored(act.act, 'yellow')
+            else:
+                c_act = act.act
+
+            logging.info("[%5s] player name: %s, action: %5s, amount:%4s, chips: %5s, total bet: %4d. (%s)",
+                         self.round_name, act.md5[:5], c_act, act.amount, act.chips, self.total_bet, c_bigblind)
         else:
+
+            if act.md5 == self._mine.md5:
+                c_act = colored(act.act, 'yellow')
+            else:
+                c_act = act.act
+
             logging.info("[%5s] player name: %s, action: %5s, amount:%4s, chips: %5s, total bet: %4d.",
-                         self.round_name, act.md5[:5], act.act, act.amount, act.chips, self.total_bet)
+                         self.round_name, act.md5[:5], c_act, act.amount, act.chips, self.total_bet)
 
     def update_winners_info(self, winners):
         for winner in winners:
@@ -267,10 +296,8 @@ class Table(object):
 
     def _save_summarize(self):
         summarize = dict()
-        summarize['time'] = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M')
+        summarize['time'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
         summarize['table_number'] = self.number
-        summarize['played_games'] = self._player_games
-        summarize['win_rate'] = self._win_count / self._total_count
         summarize['chips'] = self._chips
         summarize['round_count'] = self.round_count
 
