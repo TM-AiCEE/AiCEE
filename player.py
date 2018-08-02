@@ -266,7 +266,7 @@ class Bot(Player):
             if last_action.chips >= 0 and last_action.amount > settings.MAX_AMOUNT_CHIPS_ROUND * 2:
                 act = Player.Actions.FOLD
                 logger.debug("[do_actions] use avoid other player bet big amount. (%s) (%s)",
-                            last_action.amount, settings.MAX_AMOUNT_CHIPS_ROUND * 2)
+                             last_action.amount, settings.MAX_AMOUNT_CHIPS_ROUND * 2)
 
             if player and not player.allin:
                 other_player_chips_risk = 0.6 if last_action.chips == 0 else last_action.amount / last_action.chips
@@ -274,7 +274,13 @@ class Bot(Player):
                     if other_player_chips_risk >= 0.6:
                         act = Player.Actions.FOLD
                         logger.debug("[do_actions] use avoid other player bet big amount. %s, %s, risk: %s",
-                                    last_action.amount, last_action.chips, other_player_chips_risk)
+                                     last_action.amount, last_action.chips, other_player_chips_risk)
+
+            if last_action.amount >= self.chips * 0.7:
+                if win_prob < 0.7:
+                    act = Player.Actions.FOLD
+                    logger.debug("[do_actions] use avoid other players bet big amount. %s, my chips: %s.",
+                                 last_action.amount, self.chips)
 
         # protected by rank
         chips_risk = self.chips / t.total_chips()
