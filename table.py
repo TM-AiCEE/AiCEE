@@ -153,6 +153,9 @@ class Table(object):
     def new_round(self):
         logging.info("========== new round (%s) ========", self.round_count)
 
+        # clear all actions of players history
+        self.player_actions.clear()
+
         # list big-blind and small-blind players
         if len(self.big_blind) > 0 and len(self.small_blind) > 0:
             logging.info("[%5s] Big-Blind: (%s), bet:(%s), Small-Blind: (%s), bet:(%s)",
@@ -190,7 +193,6 @@ class Table(object):
 
         fname = os.path.join(os.path.dirname(os.path.abspath(__file__)), "status.txt")
         if os.path.isfile(fname):
-            logging.info(s)
             os.remove(fname)
             utils.restart_program()
 
@@ -208,9 +210,7 @@ class Table(object):
             amount = int(json_act.amount)
 
         act = PlayerAction(json_act.action, json_act.playerName, amount, json_act.chips)
-        if json_act != 'fold':
-            self.player_actions.clear()
-            self.player_actions.append(act)
+        self.player_actions.append(act)
 
         if act.act == 'Bet' and act.chips >= self._mine.chips:
             self.bet_big_chips = True
@@ -223,7 +223,7 @@ class Table(object):
 
     def show_action(self):
 
-        act = self.player_actions[0]
+        act = self.player_actions[-1]
 
         if self.is_big_blind_player(act.md5):
             c_bigblind = colored("Big-Blind", 'magenta')
