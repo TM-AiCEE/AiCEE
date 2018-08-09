@@ -249,55 +249,27 @@ class Bot(Player):
 
         # do nothing, return default act
         if len(t.player_actions) <= 0:
-            logger.debug("[do_actions] no actions data.")
+            logger.info("[do_actions] no actions data.")
             act = Player.Actions.FOLD
             return act
 
+        # avoid other players all-in rule
         for p_act in t.player_actions:
             if p_act.md5 != self.md5:
                 if p_act == 'allin' or p_act == 'bet' or p_act == 'raise':
-                    if p_act.amount > self.chips * thresholds["chipsguard"]:
+                    if p_act.amount > self.chips * MAX_AMOUNT_CHIPS_ROUND * 2:
                         if win_prob <= 0.62:
                             act = Player.Actions.FOLD
-                            logger.debug("[do_actions] use avoid other players all-in rule.")
-
-        # avoid other players all-in rule
-        last_action = t.player_actions[-1]
-        if t.other_players_allin() and last_action.amount > self.chips * thresholds["chipsguard"]:
-            if win_prob <= 0.7:
-                act = Player.Actions.FOLD
-                logger.debug("[do_actions] use avoid other players all-in rule.")
-
-        # avoid other players all-in rule
-        if last_action.md5 is not self.md5:
-            player = t.find_player(last_action.md5)
-            if last_action.chips >= 0 and last_action.amount > settings.MAX_AMOUNT_CHIPS_ROUND * 2:
-                act = Player.Actions.FOLD
-                logger.debug("[do_actions] use avoid other player bet big amount. (%s) (%s)",
-                             last_action.amount, settings.MAX_AMOUNT_CHIPS_ROUND * 2)
-
-            if player and not player.allin:
-                other_player_chips_risk = 0.6 if last_action.chips == 0 else last_action.amount / last_action.chips
-                if win_prob < 0.6:
-                    if other_player_chips_risk >= 0.6:
-                        act = Player.Actions.FOLD
-                        logger.debug("[do_actions] use avoid other player bet big amount. %s, %s, risk: %s",
-                                     last_action.amount, last_action.chips, other_player_chips_risk)
-
-            if last_action.amount >= self.chips * 0.7:
-                if win_prob < 0.7:
-                    act = Player.Actions.FOLD
-                    logger.debug("[do_actions] use avoid other players bet big amount. %s, my chips: %s.",
-                                 last_action.amount, self.chips)
+                            logger.info("[do_actions] use avoid other players all-in rule.")
 
         # protected by rank
         chips_risk = self.chips / t.total_chips()
         if chips_risk >= 0.3 and win_prob < 0.4 and t.round_name == 'Deal':
             act = Player.Actions.FOLD
-            logger.debug("[do_actions] protected chip by rank.")
+            logger.info("[do_actions] protected chip by rank.")
         if chips_risk >= 0.3 and win_prob < 0.7 and t.round_name != 'Deal':
             act = Player.Actions.FOLD
-            logger.debug("[do_actions] protected chip by rank.")
+            logger.info("[do_actions] protected chip by rank.")
 
         return act
 

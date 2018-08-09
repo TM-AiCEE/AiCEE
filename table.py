@@ -192,7 +192,7 @@ class Table(object):
                              card, message, rank, win_money)
 
         fname = os.path.join(os.path.dirname(os.path.abspath(__file__)), "status.txt")
-        if os.path.isfile(fname):
+        if settings.CHECK_STATUS_FILE and os.path.isfile(fname):
             os.remove(fname)
             utils.restart_program()
 
