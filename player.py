@@ -253,8 +253,16 @@ class Bot(Player):
             act = Player.Actions.FOLD
             return act
 
+        for p_act in t.player_actions:
+            if p_act.md5 != self.md5:
+                if p_act == 'allin' or p_act == 'bet' or p_act == 'raise':
+                    if p_act.amount > self.chips * thresholds["chipsguard"]:
+                        if win_prob <= 0.62:
+                            act = Player.Actions.FOLD
+                            logger.debug("[do_actions] use avoid other players all-in rule.")
+
         # avoid other players all-in rule
-        last_action = t.player_actions.pop(0)
+        last_action = t.player_actions[-1]
         if t.other_players_allin() and last_action.amount > self.chips * thresholds["chipsguard"]:
             if win_prob <= 0.7:
                 act = Player.Actions.FOLD
