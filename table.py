@@ -212,11 +212,11 @@ class Table(object):
         act = PlayerAction(json_act.action, json_act.playerName, amount, json_act.chips)
         self.player_actions.append(act)
 
-        if act.act == 'Bet' and act.chips >= self._mine.chips:
+        if act.act == 'bet' and act.chips >= self._mine.chips:
             self.bet_big_chips = True
             self.current_round = self.round_name
             logging.info("[update actions] %s bet big amount. %s. chip_rate: %s",
-                         self.md5[:5], self.amount, self.amount/self.chips)
+                         act.md5[:5], act.amount, act.amount/act.chips)
 
         if self.current_round != self.round_name:
             self.bet_big_chips = False

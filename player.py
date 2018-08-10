@@ -254,13 +254,22 @@ class Bot(Player):
             return act
 
         # avoid other players all-in rule
-        for p_act in t.player_actions:
-            if p_act.md5 != self.md5:
-                if p_act == 'allin' or p_act == 'bet' or p_act == 'raise':
-                    if p_act.amount > self.chips * MAX_AMOUNT_CHIPS_ROUND * 2:
-                        if win_prob <= 0.62:
-                            act = Player.Actions.FOLD
-                            logger.info("[do_actions] use avoid other players all-in rule.")
+        for p_act in reversed(t.player_actions):
+            logger.info("checking players' action md5(%s), act(%s), amount(%s), chips(%s)",
+                        p_act.md5[:4], p_act.act, p_act.amount, p_act.chips)
+
+            if p_act.md5 == self.md5:
+                continue
+
+            if p_act.act == 'allin' or p_act.act == 'bet' or p_act.act == 'raise':
+
+                upper_limit_chips = min(self.chips * thresholds["chipsguard"], settings.MAX_AMOUNT_CHIPS_ROUND)
+
+                if p_act.amount > upper_limit_chips:
+                    if win_prob <= 0.62:
+                        act = Player.Actions.FOLD
+                        logger.info("[do_actions] use avoid other players all-in rule (%s).", upper_limit_chips)
+                break
 
         # protected by rank
         chips_risk = self.chips / t.total_chips()
