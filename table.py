@@ -6,6 +6,7 @@ import datetime
 import settings
 import utils
 import os
+import display_name
 
 from termcolor import colored
 from singleton import SingletonMetaclass

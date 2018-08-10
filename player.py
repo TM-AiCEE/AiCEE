@@ -3,6 +3,8 @@ import json
 import logging
 import hashlib
 import settings
+import load_parsed_csv
+import random
 
 from enum import Enum
 from handevaluator import HandEvaluator
@@ -207,6 +209,9 @@ class Bot(Player):
             win_prob = HandEvaluator().evaluate_preflop_win_prob(self.cards, t.number_player())
             thresholds = {"check": 0.15, "call": 0.20, "bet": 0.6, "raise": 0.8, "allin": 0.98, "chipsguard": 0.2}
 
+            # decide based on server game data
+            # act = self.action_by_parsed_server_data(self.cards, table.board)
+
             # decide by win_prob
             act = self._decide_action(win_prob, thresholds)
 
@@ -304,3 +309,7 @@ class Bot(Player):
             logger.debug("[do_actions] use max amount chips in round rule.")
 
         return chips
+
+    def  get_parsed_decision(cards, board):
+        act = load_parsed_csv.get_parsed_decision(cards, board)
+        return act
